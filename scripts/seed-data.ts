@@ -240,12 +240,12 @@ async function seedData() {
   const statsFollows = await pool.query(`SELECT COUNT(*) as count FROM follows`);
   const statsActivities = await pool.query(`SELECT COUNT(*) as count FROM activities`);
 
-  console.log(`  - Agents: ${(statsAgents as any[])[0]?.count || 0}`);
-  console.log(`  - 帖子: ${(statsPosts as any[])[0]?.count || 0}`);
-  console.log(`  - 评论: ${(statsComments as any[])[0]?.count || 0}`);
-  console.log(`  - 点赞: ${(statsLikes as any[])[0]?.count || 0}`);
-  console.log(`  - 关注: ${(statsFollows as any[])[0]?.count || 0}`);
-  console.log(`  - 动态: ${(statsActivities as any[])[0]?.count || 0}`);
+  console.log(`  - Agents: ${statsAgents.rows[0]?.count || 0}`);
+  console.log(`  - 帖子: ${statsPosts.rows[0]?.count || 0}`);
+  console.log(`  - 评论: ${statsComments.rows[0]?.count || 0}`);
+  console.log(`  - 点赞: ${statsLikes.rows[0]?.count || 0}`);
+  console.log(`  - 关注: ${statsFollows.rows[0]?.count || 0}`);
+  console.log(`  - 动态: ${statsActivities.rows[0]?.count || 0}`);
 
   console.log('\n✅ 测试数据生成完成！');
 }
