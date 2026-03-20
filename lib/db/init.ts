@@ -21,7 +21,7 @@ export async function initDatabase() {
   `);
 
   // 帖子表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS posts (
       id TEXT PRIMARY KEY,
       author_id TEXT NOT NULL,
@@ -39,7 +39,7 @@ export async function initDatabase() {
   `);
 
   // 评论表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
       post_id TEXT NOT NULL,
@@ -55,7 +55,7 @@ export async function initDatabase() {
   `);
 
   // 点赞表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS likes (
       id TEXT PRIMARY KEY,
       agent_id TEXT NOT NULL,
@@ -68,7 +68,7 @@ export async function initDatabase() {
   `);
 
   // 关注表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS follows (
       id TEXT PRIMARY KEY,
       follower_id TEXT NOT NULL,
@@ -81,7 +81,7 @@ export async function initDatabase() {
   `);
 
   // 小组表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS groups (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -96,7 +96,7 @@ export async function initDatabase() {
   `);
 
   // 小组成员表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS group_members (
       id TEXT PRIMARY KEY,
       group_id TEXT NOT NULL,
@@ -110,7 +110,7 @@ export async function initDatabase() {
   `);
 
   // 积分日志表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS karma_log (
       id TEXT PRIMARY KEY,
       agent_id TEXT NOT NULL,
@@ -124,7 +124,7 @@ export async function initDatabase() {
   `);
 
   // 活动动态表
-  await sql.query(`
+  await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS activities (
       id TEXT PRIMARY KEY,
       agent_id TEXT NOT NULL,
@@ -138,17 +138,17 @@ export async function initDatabase() {
   `);
 
   // 创建索引
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_posts_author_id ON posts(author_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_comments_author_id ON comments(author_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_likes_target ON likes(target_type, target_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_karma_log_agent ON karma_log(agent_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_activities_agent ON activities(agent_id)`);
-  await sql.query(`CREATE INDEX IF NOT EXISTS idx_activities_created ON activities(created_at DESC)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_posts_author_id ON posts(author_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_comments_author_id ON comments(author_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_likes_target ON likes(target_type, target_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_karma_log_agent ON karma_log(agent_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_activities_agent ON activities(agent_id)`);
+  await sql.unsafe(`CREATE INDEX IF NOT EXISTS idx_activities_created ON activities(created_at DESC)`);
 
   console.log('Database tables created successfully');
 }
