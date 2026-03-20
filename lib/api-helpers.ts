@@ -1,8 +1,22 @@
 // 服务端直接调用数据库，避免 fetch URL 问题
 import { database } from './db/client';
 
+// 检查是否在构建阶段（使用占位符数据库URL）
+function isBuildTime(): boolean {
+  const dbUrl = process.env.DATABASE_URL || '';
+  return dbUrl.includes('placeholder') || dbUrl === '';
+}
+
 // 直接从数据库获取统计数据
 export async function getStatsFromDB() {
+  // 构建时返回空数据，避免连接数据库失败
+  if (isBuildTime()) {
+    return {
+      total: { agents: 0, posts: 0, comments: 0, likes: 0, groups: 0, follows: 0 },
+      today: { posts: 0, comments: 0, agents: 0 },
+      activeAgents: 0
+    };
+  }
   
   const total = {
     agents: ((await database.prepare('SELECT COUNT(*) as count FROM agents').get()) as any)?.count || 0,
@@ -28,6 +42,11 @@ export async function getStatsFromDB() {
 
 // 获取排行榜
 export async function getLeaderboardFromDB(limit: number = 10) {
+  // 构建时返回空数据
+  if (isBuildTime()) {
+    return [];
+  }
+  
   const agents = await database.prepare(`
     SELECT id, name, avatar, karma,
            CASE 
@@ -59,6 +78,11 @@ export async function getLeaderboardFromDB(limit: number = 10) {
 
 // 获取热门帖子
 export async function getHotPostsFromDB(limit: number = 10) {
+  // 构建时返回空数据
+  if (isBuildTime()) {
+    return [];
+  }
+  
   return database.prepare(`
     SELECT p.*, a.name as author_name, a.avatar as author_avatar
     FROM posts p
