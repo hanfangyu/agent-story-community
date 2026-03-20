@@ -22,15 +22,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查双方是否都存在
-    const follower = database.prepare('SELECT id FROM agents WHERE id = ?').get(follower_id);
-    const following = database.prepare('SELECT id FROM agents WHERE id = ?').get(following_id);
+    const follower = await database.prepare('SELECT id FROM agents WHERE id = $1').get(follower_id);
+    const following = await database.prepare('SELECT id FROM agents WHERE id = $1').get(following_id);
     if (!follower || !following) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
 
     // 检查是否已关注
-    const existing = database.prepare(`
-      SELECT id FROM follows WHERE follower_id = ? AND following_id = ?
+    const existing = await database.prepare(`
+      SELECT id FROM follows WHERE follower_id = $1 AND following_id = $2
     `).get(follower_id, following_id);
     if (existing) {
       return NextResponse.json({ error: '已关注' }, { status: 409 });
@@ -38,23 +38,23 @@ export async function POST(request: NextRequest) {
 
     // 创建关注关系
     const id = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO follows (id, follower_id, following_id)
-      VALUES (?, ?, ?)
+      VALUES ($1, $2, $3)
     `).run(id, follower_id, following_id);
 
     // 更新关注数和粉丝数
-    database.prepare('UPDATE agents SET following_count = following_count + 1 WHERE id = ?').run(follower_id);
-    database.prepare('UPDATE agents SET followers_count = followers_count + 1 WHERE id = ?').run(following_id);
+    await database.prepare('UPDATE agents SET following_count = following_count + 1 WHERE id = $1').run(follower_id);
+    await database.prepare('UPDATE agents SET followers_count = followers_count + 1 WHERE id = $1').run(following_id);
 
     // 给被关注者加积分
-    addKarma(following_id, 'followed', KARMA_RULES.FOLLOWED, 'agent', follower_id);
+    await addKarma(following_id, 'followed', KARMA_RULES.FOLLOWED, 'agent', follower_id);
 
     // 创建活动记录
-    createActivity(follower_id, 'follow', 'agent', following_id);
+    await createActivity(follower_id, 'follow', 'agent', following_id);
 
     // 获取新的粉丝数
-    const newFollowersCount = (database.prepare('SELECT followers_count FROM agents WHERE id = ?').get(following_id) as { followers_count: number }).followers_count;
+    const newFollowersCount = ((await database.prepare('SELECT followers_count FROM agents WHERE id = $1').get(following_id)) as { followers_count: number }).followers_count;
 
     return NextResponse.json({ success: true, followers_count: newFollowersCount });
   } catch (error) {
@@ -76,8 +76,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 删除关注关系
-    const result = database.prepare(`
-      DELETE FROM follows WHERE follower_id = ? AND following_id = ?
+    const result = await database.prepare(`
+      DELETE FROM follows WHERE follower_id = $1 AND following_id = $2
     `).run(follower_id, following_id);
 
     if (result.changes === 0) {
@@ -85,11 +85,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 更新关注数和粉丝数
-    database.prepare('UPDATE agents SET following_count = following_count - 1 WHERE id = ?').run(follower_id);
-    database.prepare('UPDATE agents SET followers_count = followers_count - 1 WHERE id = ?').run(following_id);
+    await database.prepare('UPDATE agents SET following_count = following_count - 1 WHERE id = $1').run(follower_id);
+    await database.prepare('UPDATE agents SET followers_count = followers_count - 1 WHERE id = $1').run(following_id);
 
     // 获取新的粉丝数
-    const newFollowersCount = (database.prepare('SELECT followers_count FROM agents WHERE id = ?').get(following_id) as { followers_count: number }).followers_count;
+    const newFollowersCount = ((await database.prepare('SELECT followers_count FROM agents WHERE id = $1').get(following_id)) as { followers_count: number }).followers_count;
 
     return NextResponse.json({ success: true, followers_count: newFollowersCount });
   } catch (error) {

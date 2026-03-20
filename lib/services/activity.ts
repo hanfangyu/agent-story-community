@@ -33,18 +33,18 @@ export interface Activity {
 /**
  * 创建活动记录
  */
-export function createActivity(
+export async function createActivity(
   agentId: string,
   action: ActivityAction,
   targetType?: ActivityTargetType,
   targetId?: string,
   content?: string
-): Activity | null {
+): Promise<Activity | null> {
   try {
     const id = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO activities (id, agent_id, action, target_type, target_id, content)
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `).run(id, agentId, action, targetType || null, targetId || null, content || null);
 
     return {
@@ -65,55 +65,55 @@ export function createActivity(
 /**
  * 获取 Agent 的活动动态
  */
-export function getAgentActivities(
+export async function getAgentActivities(
   agentId: string,
   limit = 20,
   offset = 0
-): Array<Activity & { agent_name: string; agent_avatar: string | null }> {
+): Promise<Array<Activity & { agent_name: string; agent_avatar: string | null }>> {
   return database.prepare(`
     SELECT a.*, ag.name as agent_name, ag.avatar as agent_avatar
     FROM activities a
     JOIN agents ag ON a.agent_id = ag.id
-    WHERE a.agent_id = ?
+    WHERE a.agent_id = $1
     ORDER BY a.created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(agentId, limit, offset) as Array<Activity & { agent_name: string; agent_avatar: string | null }>;
+    LIMIT $2 OFFSET $3
+  `).all(agentId, limit, offset) as Promise<Array<Activity & { agent_name: string; agent_avatar: string | null }>>;
 }
 
 /**
  * 获取全局活动动态（时间线）
  */
-export function getGlobalActivities(
+export async function getGlobalActivities(
   limit = 20,
   offset = 0
-): Array<Activity & { agent_name: string; agent_avatar: string | null }> {
+): Promise<Array<Activity & { agent_name: string; agent_avatar: string | null }>> {
   return database.prepare(`
     SELECT a.*, ag.name as agent_name, ag.avatar as agent_avatar
     FROM activities a
     JOIN agents ag ON a.agent_id = ag.id
     ORDER BY a.created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(limit, offset) as Array<Activity & { agent_name: string; agent_avatar: string | null }>;
+    LIMIT $1 OFFSET $2
+  `).all(limit, offset) as Promise<Array<Activity & { agent_name: string; agent_avatar: string | null }>>;
 }
 
 /**
  * 获取关注的人的活动动态
  */
-export function getFollowingActivities(
+export async function getFollowingActivities(
   agentId: string,
   limit = 20,
   offset = 0
-): Array<Activity & { agent_name: string; agent_avatar: string | null }> {
+): Promise<Array<Activity & { agent_name: string; agent_avatar: string | null }>> {
   return database.prepare(`
     SELECT a.*, ag.name as agent_name, ag.avatar as agent_avatar
     FROM activities a
     JOIN agents ag ON a.agent_id = ag.id
     WHERE a.agent_id IN (
-      SELECT following_id FROM follows WHERE follower_id = ?
+      SELECT following_id FROM follows WHERE follower_id = $1
     )
     ORDER BY a.created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(agentId, limit, offset) as Array<Activity & { agent_name: string; agent_avatar: string | null }>;
+    LIMIT $2 OFFSET $3
+  `).all(agentId, limit, offset) as Promise<Array<Activity & { agent_name: string; agent_avatar: string | null }>>;
 }
 
 /**

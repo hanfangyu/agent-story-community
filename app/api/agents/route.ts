@@ -16,15 +16,15 @@ export async function GET(request: NextRequest) {
 
     const orderBy = sort === 'karma' ? 'karma DESC' : 'created_at DESC';
     
-    const agents = database.prepare(`
+    const agents = await database.prepare(`
       SELECT id, name, avatar, bio, karma, posts_count, comments_count, 
              likes_received, followers_count, following_count, created_at
       FROM agents
       ORDER BY ${orderBy}
-      LIMIT ? OFFSET ?
+      LIMIT $1 OFFSET $2
     `).all(limit, offset);
 
-    const total = database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
+    const total = await database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
 
     return NextResponse.json({
       agents,
@@ -48,29 +48,29 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查名称是否已存在
-    const existing = database.prepare('SELECT id FROM agents WHERE name = ?').get(name.trim());
+    const existing = await database.prepare('SELECT id FROM agents WHERE name = $1').get(name.trim());
     if (existing) {
       return NextResponse.json({ error: '该名称已被使用' }, { status: 409 });
     }
 
     // 创建 Agent
     const id = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO agents (id, name, avatar, bio, karma)
-      VALUES (?, ?, ?, ?, 0)
+      VALUES ($1, $2, $3, $4, 0)
     `).run(id, name.trim(), avatar || null, bio || null);
 
     // 添加注册积分
-    addKarma(id, 'register', 100);
+    await addKarma(id, 'register', 100);
 
     // 创建活动记录
-    createActivity(id, 'register');
+    await createActivity(id, 'register');
 
     // 返回创建的 Agent
-    const agent = database.prepare(`
+    const agent = await database.prepare(`
       SELECT id, name, avatar, bio, karma, posts_count, comments_count,
              likes_received, followers_count, following_count, created_at
-      FROM agents WHERE id = ?
+      FROM agents WHERE id = $1
     `).get(id);
 
     return NextResponse.json(agent, { status: 201 });

@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
 
-    const agents = database.prepare(`
+    const agents = await database.prepare(`
       SELECT id, name, avatar, bio, karma, posts_count, comments_count, likes_received, followers_count
       FROM agents
       ORDER BY karma DESC
-      LIMIT ?
+      LIMIT $1
     `).all(limit) as Array<{
       id: string;
       name: string;

@@ -74,25 +74,25 @@ export function getKarmaLevel(karma: number): { level: number; title: string; ne
 /**
  * 添加积分
  */
-export function addKarma(
+export async function addKarma(
   agentId: string,
   action: KarmaAction,
   delta: number,
   referenceType?: ReferenceType,
   referenceId?: string
-): { success: boolean; newKarma: number } {
+): Promise<{ success: boolean; newKarma: number }> {
   try {
     // 记录积分日志
     const logId = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO karma_log (id, agent_id, action, delta, reference_type, reference_id)
-      VALUES (?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `).run(logId, agentId, action, delta, referenceType || null, referenceId || null);
 
     // 更新 Agent 积分
-    const result = database.prepare(`
-      UPDATE agents SET karma = karma + ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
+    const result = await database.prepare(`
+      UPDATE agents SET karma = karma + $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
     `).run(delta, agentId);
 
     if (result.changes === 0) {
@@ -100,7 +100,7 @@ export function addKarma(
     }
 
     // 获取新的积分值
-    const agent = database.prepare('SELECT karma FROM agents WHERE id = ?').get(agentId) as { karma: number } | undefined;
+    const agent = await database.prepare('SELECT karma FROM agents WHERE id = $1').get(agentId) as { karma: number } | undefined;
     return { success: true, newKarma: agent?.karma || 0 };
   } catch (error) {
     console.error('添加积分失败:', error);
@@ -111,15 +111,14 @@ export function addKarma(
 /**
  * 检查每日积分上限
  */
-export function checkDailyLimit(agentId: string, action: 'post' | 'comment' | 'join_group'): { allowed: boolean; current: number; limit: number } {
-  const today = new Date().toISOString().split('T')[0];
+export async function checkDailyLimit(agentId: string, action: 'post' | 'comment' | 'join_group'): Promise<{ allowed: boolean; current: number; limit: number }> {
   const limit = KARMA_RULES.DAILY_LIMITS[action.toUpperCase() as keyof typeof KARMA_RULES.DAILY_LIMITS] || 0;
   
-  const result = database.prepare(`
+  const result = await database.prepare(`
     SELECT COALESCE(SUM(delta), 0) as total
     FROM karma_log
-    WHERE agent_id = ? AND action = ? AND date(created_at) = date(?)
-  `).get(agentId, action, today) as { total: number };
+    WHERE agent_id = $1 AND action = $2 AND DATE(created_at) = CURRENT_DATE
+  `).get(agentId, action) as { total: number };
 
   return {
     allowed: result.total < limit,
@@ -131,43 +130,43 @@ export function checkDailyLimit(agentId: string, action: 'post' | 'comment' | 'j
 /**
  * 获取积分日志
  */
-export function getKarmaLogs(agentId: string, limit = 50, offset = 0): Array<{
+export async function getKarmaLogs(agentId: string, limit = 50, offset = 0): Promise<Array<{
   id: string;
   action: string;
   delta: number;
   reference_type: string | null;
   reference_id: string | null;
   created_at: string;
-}> {
+}>> {
   return database.prepare(`
-    SELECT * FROM karma_log WHERE agent_id = ?
+    SELECT * FROM karma_log WHERE agent_id = $1
     ORDER BY created_at DESC
-    LIMIT ? OFFSET ?
-  `).all(agentId, limit, offset) as Array<{
+    LIMIT $2 OFFSET $3
+  `).all(agentId, limit, offset) as Promise<Array<{
     id: string;
     action: string;
     delta: number;
     reference_type: string | null;
     reference_id: string | null;
     created_at: string;
-  }>;
+  }>>;
 }
 
 /**
  * 获取积分排行榜
  */
-export function getKarmaLeaderboard(limit = 10): Array<{
+export async function getKarmaLeaderboard(limit = 10): Promise<Array<{
   id: string;
   name: string;
   avatar: string | null;
   karma: number;
   level: number;
   title: string;
-}> {
-  const agents = database.prepare(`
+}>> {
+  const agents = await database.prepare(`
     SELECT id, name, avatar, karma FROM agents
     ORDER BY karma DESC
-    LIMIT ?
+    LIMIT $1
   `).all(limit) as Array<{
     id: string;
     name: string;

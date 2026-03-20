@@ -106,34 +106,34 @@ interface Comment {
   post_title: string | null;
 }
 
-function getAgent(id: string): Agent | null {
-  const agent = database.prepare(`
+async function getAgent(id: string): Promise<Agent | null> {
+  const agent = await database.prepare(`
     SELECT id, name, avatar, bio, karma, posts_count, comments_count,
            likes_received, followers_count, following_count, created_at, updated_at
-    FROM agents WHERE id = ?
+    FROM agents WHERE id = $1
   `).get(id) as Agent | undefined;
   return agent || null;
 }
 
-function getAgentPosts(id: string): Post[] {
+async function getAgentPosts(id: string): Promise<Post[]> {
   return database.prepare(`
     SELECT id, title, content, likes_count, comments_count, created_at
-    FROM posts WHERE author_id = ?
+    FROM posts WHERE author_id = $1
     ORDER BY created_at DESC
     LIMIT 20
-  `).all(id) as Post[];
+  `).all(id) as Promise<Post[]>;
 }
 
-function getAgentComments(id: string): Comment[] {
+async function getAgentComments(id: string): Promise<Comment[]> {
   return database.prepare(`
     SELECT c.id, c.post_id, c.content, c.likes_count, c.created_at,
            p.content as post_content, p.title as post_title
     FROM comments c
     JOIN posts p ON c.post_id = p.id
-    WHERE c.author_id = ?
+    WHERE c.author_id = $1
     ORDER BY c.created_at DESC
     LIMIT 20
-  `).all(id) as Comment[];
+  `).all(id) as Promise<Comment[]>;
 }
 
 interface FollowUser {
@@ -143,26 +143,26 @@ interface FollowUser {
   karma: number;
 }
 
-function getFollowers(id: string): FollowUser[] {
+async function getFollowers(id: string): Promise<FollowUser[]> {
   return database.prepare(`
     SELECT a.id, a.name, a.avatar, a.karma
     FROM agents a
     JOIN follows f ON a.id = f.follower_id
-    WHERE f.following_id = ?
+    WHERE f.following_id = $1
     ORDER BY f.created_at DESC
     LIMIT 50
-  `).all(id) as FollowUser[];
+  `).all(id) as Promise<FollowUser[]>;
 }
 
-function getFollowing(id: string): FollowUser[] {
+async function getFollowing(id: string): Promise<FollowUser[]> {
   return database.prepare(`
     SELECT a.id, a.name, a.avatar, a.karma
     FROM agents a
     JOIN follows f ON a.id = f.following_id
-    WHERE f.follower_id = ?
+    WHERE f.follower_id = $1
     ORDER BY f.created_at DESC
     LIMIT 50
-  `).all(id) as FollowUser[];
+  `).all(id) as Promise<FollowUser[]>;
 }
 
 export default async function AgentPage({
@@ -171,17 +171,17 @@ export default async function AgentPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const agent = getAgent(id);
+  const agent = await getAgent(id);
 
   if (!agent) {
     notFound();
   }
 
   const levelInfo = getKarmaLevel(agent.karma);
-  const posts = getAgentPosts(id);
-  const comments = getAgentComments(id);
-  const followers = getFollowers(id);
-  const following = getFollowing(id);
+  const posts = await getAgentPosts(id);
+  const comments = await getAgentComments(id);
+  const followers = await getFollowers(id);
+  const following = await getFollowing(id);
 
   return (
     <div className="container py-6">

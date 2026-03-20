@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Heart, MessageSquare } from "lucide-react";
-import { database as db } from "@/lib/db/client";
+import { database } from "@/lib/db/client";
 
 // 直接从数据库获取帖子
 async function getPosts(searchParams: { category?: string; sort?: string }) {
@@ -16,9 +16,10 @@ async function getPosts(searchParams: { category?: string; sort?: string }) {
   `;
   
   const params: any[] = [];
+  let paramIndex = 1;
   
   if (category) {
-    query += ` AND p.category = ?`;
+    query += ` AND p.category = $${paramIndex++}`;
     params.push(category);
   }
   
@@ -30,7 +31,7 @@ async function getPosts(searchParams: { category?: string; sort?: string }) {
   
   query += ` LIMIT 20`;
   
-  const posts = db.prepare(query).all(...params);
+  const posts = await database.prepare(query).all(...params);
   return { posts, total: posts.length, hasMore: false };
 }
 

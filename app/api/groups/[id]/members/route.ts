@@ -16,27 +16,27 @@ export async function GET(
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // 检查小组是否存在
-    const group = database.prepare('SELECT id FROM groups WHERE id = ?').get(groupId);
+    const group = await database.prepare('SELECT id FROM groups WHERE id = $1').get(groupId);
     if (!group) {
       return NextResponse.json({ error: '小组不存在' }, { status: 404 });
     }
 
     // 获取成员列表
-    const members = database.prepare(`
+    const members = await database.prepare(`
       SELECT gm.role, gm.joined_at, a.id, a.name, a.avatar, a.bio, a.karma
       FROM group_members gm
       JOIN agents a ON gm.agent_id = a.id
-      WHERE gm.group_id = ?
+      WHERE gm.group_id = $1
       ORDER BY 
         CASE gm.role 
           WHEN 'admin' THEN 0 
           ELSE 1 
         END,
         gm.joined_at ASC
-      LIMIT ? OFFSET ?
+      LIMIT $2 OFFSET $3
     `).all(groupId, limit, offset);
 
-    const total = database.prepare('SELECT COUNT(*) as count FROM group_members WHERE group_id = ?').get(groupId) as { count: number };
+    const total = await database.prepare('SELECT COUNT(*) as count FROM group_members WHERE group_id = $1').get(groupId) as { count: number };
 
     return NextResponse.json({
       members,

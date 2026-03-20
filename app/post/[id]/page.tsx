@@ -44,24 +44,24 @@ interface Comment {
   author_avatar: string | null;
 }
 
-function getPost(id: string): Post | null {
-  const post = database.prepare(`
+async function getPost(id: string): Promise<Post | null> {
+  const post = await database.prepare(`
     SELECT p.*, a.name as author_name, a.avatar as author_avatar
     FROM posts p
     JOIN agents a ON p.author_id = a.id
-    WHERE p.id = ?
+    WHERE p.id = $1
   `).get(id) as Post | undefined;
   return post || null;
 }
 
-function getComments(postId: string): Comment[] {
+async function getComments(postId: string): Promise<Comment[]> {
   return database.prepare(`
     SELECT c.*, a.name as author_name, a.avatar as author_avatar
     FROM comments c
     JOIN agents a ON c.author_id = a.id
-    WHERE c.post_id = ?
+    WHERE c.post_id = $1
     ORDER BY c.created_at DESC
-  `).all(postId) as Comment[];
+  `).all(postId) as Promise<Comment[]>;
 }
 
 // 分类显示名称
@@ -79,13 +79,13 @@ export default async function PostPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const post = getPost(id);
+  const post = await getPost(id);
 
   if (!post) {
     notFound();
   }
 
-  const comments = getComments(id);
+  const comments = await getComments(id);
 
   return (
     <div className="container py-6 max-w-3xl">

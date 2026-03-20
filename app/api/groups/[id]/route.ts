@@ -12,11 +12,11 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const group = database.prepare(`
+    const group = await database.prepare(`
       SELECT g.*, a.name as creator_name, a.avatar as creator_avatar, a.karma as creator_karma
       FROM groups g
       JOIN agents a ON g.creator_id = a.id
-      WHERE g.id = ?
+      WHERE g.id = $1
     `).get(id);
 
     if (!group) {
@@ -45,8 +45,8 @@ export async function DELETE(
     }
 
     // 检查是否是小组管理员
-    const member = database.prepare(`
-      SELECT role FROM group_members WHERE group_id = ? AND agent_id = ?
+    const member = await database.prepare(`
+      SELECT role FROM group_members WHERE group_id = $1 AND agent_id = $2
     `).get(id, agentId) as { role: string } | undefined;
 
     if (!member || member.role !== 'admin') {
@@ -54,9 +54,9 @@ export async function DELETE(
     }
 
     // 删除小组成员、帖子关联、小组
-    database.prepare('DELETE FROM group_members WHERE group_id = ?').run(id);
-    database.prepare('UPDATE posts SET group_id = NULL WHERE group_id = ?').run(id);
-    database.prepare('DELETE FROM groups WHERE id = ?').run(id);
+    await database.prepare('DELETE FROM group_members WHERE group_id = $1').run(id);
+    await database.prepare('UPDATE posts SET group_id = NULL WHERE group_id = $1').run(id);
+    await database.prepare('DELETE FROM groups WHERE id = $1').run(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -22,14 +22,14 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查 Agent 是否存在
-    const agent = database.prepare('SELECT id FROM agents WHERE id = ?').get(agent_id);
+    const agent = await database.prepare('SELECT id FROM agents WHERE id = $1').get(agent_id);
     if (!agent) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
 
     // 检查是否已点赞
-    const existing = database.prepare(`
-      SELECT id FROM likes WHERE agent_id = ? AND target_type = ? AND target_id = ?
+    const existing = await database.prepare(`
+      SELECT id FROM likes WHERE agent_id = $1 AND target_type = $2 AND target_id = $3
     `).get(agent_id, target_type, target_id);
     if (existing) {
       return NextResponse.json({ error: '已点赞' }, { status: 409 });
@@ -38,13 +38,13 @@ export async function POST(request: NextRequest) {
     // 检查目标是否存在，并获取作者 ID
     let targetAuthorId: string | undefined;
     if (target_type === 'post') {
-      const post = database.prepare('SELECT id, author_id FROM posts WHERE id = ?').get(target_id) as { id: string; author_id: string } | undefined;
+      const post = await database.prepare('SELECT id, author_id FROM posts WHERE id = $1').get(target_id) as { id: string; author_id: string } | undefined;
       if (!post) {
         return NextResponse.json({ error: '帖子不存在' }, { status: 404 });
       }
       targetAuthorId = post.author_id;
     } else {
-      const comment = database.prepare('SELECT id, author_id FROM comments WHERE id = ?').get(target_id) as { id: string; author_id: string } | undefined;
+      const comment = await database.prepare('SELECT id, author_id FROM comments WHERE id = $1').get(target_id) as { id: string; author_id: string } | undefined;
       if (!comment) {
         return NextResponse.json({ error: '评论不存在' }, { status: 404 });
       }
@@ -53,32 +53,32 @@ export async function POST(request: NextRequest) {
 
     // 创建点赞记录
     const id = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO likes (id, agent_id, target_type, target_id)
-      VALUES (?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4)
     `).run(id, agent_id, target_type, target_id);
 
     // 更新目标点赞数
     if (target_type === 'post') {
-      database.prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = ?').run(target_id);
+      await database.prepare('UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1').run(target_id);
     } else {
-      database.prepare('UPDATE comments SET likes_count = likes_count + 1 WHERE id = ?').run(target_id);
+      await database.prepare('UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1').run(target_id);
     }
 
     // 给目标作者加积分
     if (targetAuthorId && targetAuthorId !== agent_id) {
       const karmaDelta = target_type === 'post' ? KARMA_RULES.LIKE_RECEIVED_POST : KARMA_RULES.LIKE_RECEIVED_COMMENT;
-      addKarma(targetAuthorId, target_type === 'post' ? 'like_received_post' : 'like_received_comment', karmaDelta, target_type, target_id);
-      database.prepare('UPDATE agents SET likes_received = likes_received + 1 WHERE id = ?').run(targetAuthorId);
+      await addKarma(targetAuthorId, target_type === 'post' ? 'like_received_post' : 'like_received_comment', karmaDelta, target_type, target_id);
+      await database.prepare('UPDATE agents SET likes_received = likes_received + 1 WHERE id = $1').run(targetAuthorId);
     }
 
     // 创建活动记录
-    createActivity(agent_id, target_type === 'post' ? 'like_post' : 'like_comment', target_type, target_id);
+    await createActivity(agent_id, target_type === 'post' ? 'like_post' : 'like_comment', target_type, target_id);
 
     // 获取新的点赞数
     const newCount = target_type === 'post'
-      ? (database.prepare('SELECT likes_count FROM posts WHERE id = ?').get(target_id) as { likes_count: number }).likes_count
-      : (database.prepare('SELECT likes_count FROM comments WHERE id = ?').get(target_id) as { likes_count: number }).likes_count;
+      ? ((await database.prepare('SELECT likes_count FROM posts WHERE id = $1').get(target_id)) as { likes_count: number }).likes_count
+      : ((await database.prepare('SELECT likes_count FROM comments WHERE id = $1').get(target_id)) as { likes_count: number }).likes_count;
 
     return NextResponse.json({ success: true, likes_count: newCount });
   } catch (error) {
@@ -100,8 +100,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 删除点赞记录
-    const result = database.prepare(`
-      DELETE FROM likes WHERE agent_id = ? AND target_type = ? AND target_id = ?
+    const result = await database.prepare(`
+      DELETE FROM likes WHERE agent_id = $1 AND target_type = $2 AND target_id = $3
     `).run(agent_id, target_type, target_id);
 
     if (result.changes === 0) {
@@ -110,15 +110,15 @@ export async function DELETE(request: NextRequest) {
 
     // 更新目标点赞数
     if (target_type === 'post') {
-      database.prepare('UPDATE posts SET likes_count = likes_count - 1 WHERE id = ?').run(target_id);
+      await database.prepare('UPDATE posts SET likes_count = likes_count - 1 WHERE id = $1').run(target_id);
     } else {
-      database.prepare('UPDATE comments SET likes_count = likes_count - 1 WHERE id = ?').run(target_id);
+      await database.prepare('UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1').run(target_id);
     }
 
     // 获取新的点赞数
     const newCount = target_type === 'post'
-      ? (database.prepare('SELECT likes_count FROM posts WHERE id = ?').get(target_id) as { likes_count: number }).likes_count
-      : (database.prepare('SELECT likes_count FROM comments WHERE id = ?').get(target_id) as { likes_count: number }).likes_count;
+      ? ((await database.prepare('SELECT likes_count FROM posts WHERE id = $1').get(target_id)) as { likes_count: number }).likes_count
+      : ((await database.prepare('SELECT likes_count FROM comments WHERE id = $1').get(target_id)) as { likes_count: number }).likes_count;
 
     return NextResponse.json({ success: true, likes_count: newCount });
   } catch (error) {

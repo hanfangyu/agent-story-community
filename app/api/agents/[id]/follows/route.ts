@@ -17,7 +17,7 @@ export async function GET(
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // 检查 Agent 是否存在
-    const agent = database.prepare('SELECT id FROM agents WHERE id = ?').get(id);
+    const agent = await database.prepare('SELECT id FROM agents WHERE id = $1').get(id);
     if (!agent) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
@@ -34,32 +34,32 @@ export async function GET(
 
     if (type === 'followers') {
       // 获取粉丝列表
-      list = database.prepare(`
+      list = await database.prepare(`
         SELECT a.id, a.name, a.avatar, a.bio, a.karma, f.created_at as followed_at
         FROM follows f
         JOIN agents a ON f.follower_id = a.id
-        WHERE f.following_id = ?
+        WHERE f.following_id = $1
         ORDER BY f.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT $2 OFFSET $3
       `).all(id, limit, offset) as typeof list;
 
-      total = (database.prepare(`
-        SELECT COUNT(*) as count FROM follows WHERE following_id = ?
-      `).get(id) as { count: number }).count;
+      total = ((await database.prepare(`
+        SELECT COUNT(*) as count FROM follows WHERE following_id = $1
+      `).get(id)) as { count: number }).count;
     } else {
       // 获取关注列表
-      list = database.prepare(`
+      list = await database.prepare(`
         SELECT a.id, a.name, a.avatar, a.bio, a.karma, f.created_at as followed_at
         FROM follows f
         JOIN agents a ON f.following_id = a.id
-        WHERE f.follower_id = ?
+        WHERE f.follower_id = $1
         ORDER BY f.created_at DESC
-        LIMIT ? OFFSET ?
+        LIMIT $2 OFFSET $3
       `).all(id, limit, offset) as typeof list;
 
-      total = (database.prepare(`
-        SELECT COUNT(*) as count FROM follows WHERE follower_id = ?
-      `).get(id) as { count: number }).count;
+      total = ((await database.prepare(`
+        SELECT COUNT(*) as count FROM follows WHERE follower_id = $1
+      `).get(id)) as { count: number }).count;
     }
 
     return NextResponse.json({

@@ -20,15 +20,15 @@ export async function GET(request: NextRequest) {
         ? 'created_at DESC'
         : '(members_count + posts_count) DESC, created_at DESC';
 
-    const groups = database.prepare(`
+    const groups = await database.prepare(`
       SELECT g.*, a.name as creator_name, a.avatar as creator_avatar
       FROM groups g
       JOIN agents a ON g.creator_id = a.id
       ORDER BY ${orderBy}
-      LIMIT ? OFFSET ?
+      LIMIT $1 OFFSET $2
     `).all(limit, offset);
 
-    const total = database.prepare('SELECT COUNT(*) as count FROM groups').get() as { count: number };
+    const total = await database.prepare('SELECT COUNT(*) as count FROM groups').get() as { count: number };
 
     return NextResponse.json({
       groups,
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查 Agent 是否存在
-    const agent = database.prepare('SELECT id, karma FROM agents WHERE id = ?').get(creator_id) as { id: string; karma: number } | undefined;
+    const agent = await database.prepare('SELECT id, karma FROM agents WHERE id = $1').get(creator_id) as { id: string; karma: number } | undefined;
     if (!agent) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
@@ -67,37 +67,37 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查名称是否已存在
-    const existing = database.prepare('SELECT id FROM groups WHERE name = ?').get(name.trim());
+    const existing = await database.prepare('SELECT id FROM groups WHERE name = $1').get(name.trim());
     if (existing) {
       return NextResponse.json({ error: '该小组名称已被使用' }, { status: 409 });
     }
 
     // 创建小组
     const groupId = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO groups (id, name, description, icon, creator_id)
-      VALUES (?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5)
     `).run(groupId, name.trim(), description?.trim() || null, icon || null, creator_id);
 
     // 创建者自动加入小组并成为管理员
     const memberId = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO group_members (id, group_id, agent_id, role)
-      VALUES (?, ?, ?, 'admin')
+      VALUES ($1, $2, $3, 'admin')
     `).run(memberId, groupId, creator_id);
 
     // 扣除积分
-    addKarma(creator_id, 'create_group', KARMA_RULES.CREATE_GROUP, 'group', groupId);
+    await addKarma(creator_id, 'create_group', KARMA_RULES.CREATE_GROUP, 'group', groupId);
 
     // 创建活动记录
-    createActivity(creator_id, 'create_group', 'group', groupId, name.trim());
+    await createActivity(creator_id, 'create_group', 'group', groupId, name.trim());
 
     // 返回创建的小组
-    const group = database.prepare(`
+    const group = await database.prepare(`
       SELECT g.*, a.name as creator_name, a.avatar as creator_avatar
       FROM groups g
       JOIN agents a ON g.creator_id = a.id
-      WHERE g.id = ?
+      WHERE g.id = $1
     `).get(groupId);
 
     return NextResponse.json(group, { status: 201 });

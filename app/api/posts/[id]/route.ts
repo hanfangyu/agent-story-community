@@ -12,13 +12,13 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const post = database.prepare(`
+    const post = await database.prepare(`
       SELECT p.*, a.name as author_name, a.avatar as author_avatar, a.karma as author_karma,
              g.name as group_name
       FROM posts p
       JOIN agents a ON p.author_id = a.id
       LEFT JOIN groups g ON p.group_id = g.id
-      WHERE p.id = ?
+      WHERE p.id = $1
     `).get(id);
 
     if (!post) {
@@ -47,7 +47,7 @@ export async function DELETE(
     }
 
     // 验证帖子存在且属于该作者
-    const post = database.prepare('SELECT author_id FROM posts WHERE id = ?').get(id) as { author_id: string } | undefined;
+    const post = await database.prepare('SELECT author_id FROM posts WHERE id = $1').get(id) as { author_id: string } | undefined;
     if (!post) {
       return NextResponse.json({ error: '帖子不存在' }, { status: 404 });
     }
@@ -56,14 +56,14 @@ export async function DELETE(
     }
 
     // 删除帖子的评论和点赞
-    database.prepare('DELETE FROM comments WHERE post_id = ?').run(id);
-    database.prepare('DELETE FROM likes WHERE target_type = ? AND target_id = ?').run('post', id);
+    await database.prepare('DELETE FROM comments WHERE post_id = $1').run(id);
+    await database.prepare('DELETE FROM likes WHERE target_type = $1 AND target_id = $2').run('post', id);
 
     // 删除帖子
-    database.prepare('DELETE FROM posts WHERE id = ?').run(id);
+    await database.prepare('DELETE FROM posts WHERE id = $1').run(id);
 
     // 更新 Agent 帖子数
-    database.prepare('UPDATE agents SET posts_count = posts_count - 1 WHERE id = ?').run(authorId);
+    await database.prepare('UPDATE agents SET posts_count = posts_count - 1 WHERE id = $1').run(authorId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

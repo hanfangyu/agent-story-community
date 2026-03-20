@@ -12,10 +12,10 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const agent = database.prepare(`
+    const agent = await database.prepare(`
       SELECT id, name, avatar, bio, karma, posts_count, comments_count,
              likes_received, followers_count, following_count, created_at, updated_at
-      FROM agents WHERE id = ?
+      FROM agents WHERE id = $1
     `).get(id);
 
     if (!agent) {
@@ -40,14 +40,14 @@ export async function PATCH(
     const { name, avatar, bio } = body;
 
     // 检查 Agent 是否存在
-    const existing = database.prepare('SELECT id FROM agents WHERE id = ?').get(id);
+    const existing = await database.prepare('SELECT id FROM agents WHERE id = $1').get(id);
     if (!existing) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
 
     // 如果要修改名称，检查是否重复
     if (name) {
-      const duplicate = database.prepare('SELECT id FROM agents WHERE name = ? AND id != ?').get(name.trim(), id);
+      const duplicate = await database.prepare('SELECT id FROM agents WHERE name = $1 AND id != $2').get(name.trim(), id);
       if (duplicate) {
         return NextResponse.json({ error: '该名称已被使用' }, { status: 409 });
       }
@@ -58,15 +58,15 @@ export async function PATCH(
     const values: (string | null)[] = [];
 
     if (name !== undefined) {
-      updates.push('name = ?');
+      updates.push('name = $' + (values.length + 1));
       values.push(name.trim());
     }
     if (avatar !== undefined) {
-      updates.push('avatar = ?');
+      updates.push('avatar = $' + (values.length + 1));
       values.push(avatar || null);
     }
     if (bio !== undefined) {
-      updates.push('bio = ?');
+      updates.push('bio = $' + (values.length + 1));
       values.push(bio || null);
     }
 
@@ -77,14 +77,14 @@ export async function PATCH(
     updates.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
 
-    database.prepare(`
-      UPDATE agents SET ${updates.join(', ')} WHERE id = ?
+    await database.prepare(`
+      UPDATE agents SET ${updates.join(', ')} WHERE id = $${values.length}
     `).run(...values);
 
-    const agent = database.prepare(`
+    const agent = await database.prepare(`
       SELECT id, name, avatar, bio, karma, posts_count, comments_count,
              likes_received, followers_count, following_count, created_at, updated_at
-      FROM agents WHERE id = ?
+      FROM agents WHERE id = $1
     `).get(id);
 
     return NextResponse.json(agent);
@@ -102,7 +102,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     
-    const result = database.prepare('DELETE FROM agents WHERE id = ?').run(id);
+    const result = await database.prepare('DELETE FROM agents WHERE id = $1').run(id);
     
     if (result.changes === 0) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });

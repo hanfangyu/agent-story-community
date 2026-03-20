@@ -21,49 +21,49 @@ export async function POST(
     }
 
     // 检查小组是否存在
-    const group = database.prepare('SELECT id FROM groups WHERE id = ?').get(groupId);
+    const group = await database.prepare('SELECT id FROM groups WHERE id = $1').get(groupId);
     if (!group) {
       return NextResponse.json({ error: '小组不存在' }, { status: 404 });
     }
 
     // 检查 Agent 是否存在
-    const agent = database.prepare('SELECT id FROM agents WHERE id = ?').get(agent_id);
+    const agent = await database.prepare('SELECT id FROM agents WHERE id = $1').get(agent_id);
     if (!agent) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
 
     // 检查是否已加入
-    const existing = database.prepare(`
-      SELECT id FROM group_members WHERE group_id = ? AND agent_id = ?
+    const existing = await database.prepare(`
+      SELECT id FROM group_members WHERE group_id = $1 AND agent_id = $2
     `).get(groupId, agent_id);
     if (existing) {
       return NextResponse.json({ error: '已加入该小组' }, { status: 409 });
     }
 
     // 检查每日加入小组积分上限
-    const limitCheck = checkDailyLimit(agent_id, 'join_group');
+    const limitCheck = await checkDailyLimit(agent_id, 'join_group');
     const karmaDelta = limitCheck.allowed ? KARMA_RULES.JOIN_GROUP : 0;
 
     // 加入小组
     const memberId = generateId();
-    database.prepare(`
+    await database.prepare(`
       INSERT INTO group_members (id, group_id, agent_id, role)
-      VALUES (?, ?, ?, 'member')
+      VALUES ($1, $2, $3, 'member')
     `).run(memberId, groupId, agent_id);
 
     // 更新小组成员数
-    database.prepare('UPDATE groups SET members_count = members_count + 1 WHERE id = ?').run(groupId);
+    await database.prepare('UPDATE groups SET members_count = members_count + 1 WHERE id = $1').run(groupId);
 
     // 添加积分
     if (karmaDelta > 0) {
-      addKarma(agent_id, 'join_group', karmaDelta, 'group', groupId);
+      await addKarma(agent_id, 'join_group', karmaDelta, 'group', groupId);
     }
 
     // 创建活动记录
-    createActivity(agent_id, 'join_group', 'group', groupId);
+    await createActivity(agent_id, 'join_group', 'group', groupId);
 
     // 获取新的成员数
-    const newMembersCount = (database.prepare('SELECT members_count FROM groups WHERE id = ?').get(groupId) as { members_count: number }).members_count;
+    const newMembersCount = ((await database.prepare('SELECT members_count FROM groups WHERE id = $1').get(groupId)) as { members_count: number }).members_count;
 
     return NextResponse.json({ success: true, members_count: newMembersCount });
   } catch (error) {
@@ -87,8 +87,8 @@ export async function DELETE(
     }
 
     // 检查成员关系
-    const member = database.prepare(`
-      SELECT role FROM group_members WHERE group_id = ? AND agent_id = ?
+    const member = await database.prepare(`
+      SELECT role FROM group_members WHERE group_id = $1 AND agent_id = $2
     `).get(groupId, agent_id) as { role: string } | undefined;
 
     if (!member) {
@@ -101,10 +101,10 @@ export async function DELETE(
     }
 
     // 退出小组
-    database.prepare('DELETE FROM group_members WHERE group_id = ? AND agent_id = ?').run(groupId, agent_id);
+    await database.prepare('DELETE FROM group_members WHERE group_id = $1 AND agent_id = $2').run(groupId, agent_id);
 
     // 更新小组成员数
-    database.prepare('UPDATE groups SET members_count = members_count - 1 WHERE id = ?').run(groupId);
+    await database.prepare('UPDATE groups SET members_count = members_count - 1 WHERE id = $1').run(groupId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

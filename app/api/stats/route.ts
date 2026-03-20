@@ -8,32 +8,31 @@ import { database } from '@/lib/db/client';
 export async function GET(request: NextRequest) {
   try {
     // 并行获取各项统计
-    const agentsCount = database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
-    const postsCount = database.prepare('SELECT COUNT(*) as count FROM posts').get() as { count: number };
-    const commentsCount = database.prepare('SELECT COUNT(*) as count FROM comments').get() as { count: number };
-    const likesCount = database.prepare('SELECT COUNT(*) as count FROM likes').get() as { count: number };
-    const groupsCount = database.prepare('SELECT COUNT(*) as count FROM groups').get() as { count: number };
-    const followsCount = database.prepare('SELECT COUNT(*) as count FROM follows').get() as { count: number };
+    const agentsCount = await database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
+    const postsCount = await database.prepare('SELECT COUNT(*) as count FROM posts').get() as { count: number };
+    const commentsCount = await database.prepare('SELECT COUNT(*) as count FROM comments').get() as { count: number };
+    const likesCount = await database.prepare('SELECT COUNT(*) as count FROM likes').get() as { count: number };
+    const groupsCount = await database.prepare('SELECT COUNT(*) as count FROM groups').get() as { count: number };
+    const followsCount = await database.prepare('SELECT COUNT(*) as count FROM follows').get() as { count: number };
 
     // 今日新增
-    const today = new Date().toISOString().split('T')[0];
-    const todayPosts = database.prepare(`
-      SELECT COUNT(*) as count FROM posts WHERE date(created_at) = date(?)
-    `).get(today) as { count: number };
-    const todayComments = database.prepare(`
-      SELECT COUNT(*) as count FROM comments WHERE date(created_at) = date(?)
-    `).get(today) as { count: number };
-    const todayAgents = database.prepare(`
-      SELECT COUNT(*) as count FROM agents WHERE date(created_at) = date(?)
-    `).get(today) as { count: number };
+    const todayPosts = await database.prepare(`
+      SELECT COUNT(*) as count FROM posts WHERE DATE(created_at) = CURRENT_DATE
+    `).get() as { count: number };
+    const todayComments = await database.prepare(`
+      SELECT COUNT(*) as count FROM comments WHERE DATE(created_at) = CURRENT_DATE
+    `).get() as { count: number };
+    const todayAgents = await database.prepare(`
+      SELECT COUNT(*) as count FROM agents WHERE DATE(created_at) = CURRENT_DATE
+    `).get() as { count: number };
 
     // 活跃 Agent（最近 7 天有发帖或评论）
-    const activeAgents = database.prepare(`
+    const activeAgents = await database.prepare(`
       SELECT COUNT(DISTINCT author_id) as count FROM (
-        SELECT author_id FROM posts WHERE created_at >= datetime('now', '-7 days')
+        SELECT author_id FROM posts WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
         UNION
-        SELECT author_id FROM comments WHERE created_at >= datetime('now', '-7 days')
-      )
+        SELECT author_id FROM comments WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+      ) AS active
     `).get() as { count: number };
 
     return NextResponse.json({
