@@ -1,64 +1,32 @@
-import { Pool } from 'pg';
-import { attachDatabasePool } from '@vercel/functions';
+import postgres from 'postgres';
 import { config } from 'dotenv';
 
-// 加载 .env 文件
+// 加载 .env 文件（本地开发）
 config();
 
-// Supabase PostgreSQL 客户端
-// 使用 pg 包 + Vercel 官方连接池管理
+// PostgreSQL 客户端
+// 使用 postgres 包，专为 serverless 环境设计
 
-// 获取数据库连接 URL
-function getDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error('DATABASE_URL is not set');
-  }
-  return url;
+const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL or POSTGRES_URL is required');
 }
 
-// 创建 PostgreSQL 连接池
-let pool: Pool | null = null;
-
-export function getPool(): Pool {
-  if (!pool) {
-    const connectionString = getDatabaseUrl();
-    
-    // 解析连接字符串并添加 SSL 参数
-    const url = new URL(connectionString);
-    
-    pool = new Pool({
-      host: url.hostname,
-      port: parseInt(url.port) || 6543,
-      database: url.pathname.slice(1),
-      user: url.username,
-      password: url.password,
-      // SSL 配置（Supabase 需要）
-      ssl: {
-        rejectUnauthorized: false
-      },
-      // 设置短 idle timeout，确保不活跃连接快速关闭
-      idleTimeoutMillis: 5000,
-      // 最小连接数
-      min: 1,
-      // 最大连接数（Supabase 免费层限制）
-      max: 10,
-    });
-    
-    // 关键：使用 Vercel 的 attachDatabasePool 确保连接在函数暂停前关闭
-    // 这解决了 serverless 环境的连接泄漏问题
-    try {
-      attachDatabasePool(pool);
-    } catch (e) {
-      // 本地开发环境可能不支持 attachDatabasePool
-      console.log('attachDatabasePool not available (likely local development)');
-    }
-  }
-  return pool;
-}
-
-// 导出连接池
-export const db = getPool();
+// 创建 SQL 客户端
+// postgres 包专为 serverless 环境设计，自动管理连接
+export const sql = postgres(databaseUrl, {
+  // 禁用 prepared statements（Supabase 连接池需要）
+  prepare: false,
+  // 连接超时
+  connect_timeout: 30,
+  // 空闲超时
+  idle_timeout: 5,
+  // 最大连接数
+  max: 10,
+  // SSL 配置
+  ssl: 'require',
+});
 
 // 辅助函数：生成唯一 ID
 export function generateId(prefix: string = ''): string {
@@ -82,26 +50,24 @@ export const database = {
     return {
       // 执行查询并返回所有结果
       async all(...params: any[]): Promise<any[]> {
-        const pool = getPool();
-        const result = await pool.query(sqlString, params);
-        return result.rows;
+        const result = await sql.unsafe(sqlString, params);
+        return Array.isArray(result) ? result : [result];
       },
       
       // 执行查询并返回第一条结果
       async get(...params: any[]): Promise<any | undefined> {
-        const pool = getPool();
-        const result = await pool.query(sqlString, params);
-        return result.rows.length > 0 ? result.rows[0] : undefined;
+        const result = await sql.unsafe(sqlString, params);
+        const arr = Array.isArray(result) ? result : [result];
+        return arr.length > 0 ? arr[0] : undefined;
       },
       
       // 执行更新/插入/删除操作
       async run(...params: any[]): Promise<{ changes: number; lastInsertRowid: string | number }> {
-        const pool = getPool();
-        const result = await pool.query(sqlString, params);
-        const changes = result.rowCount || 0;
+        const result = await sql.unsafe(sqlString, params);
+        const changes = Array.isArray(result) ? result.length : 0;
         let lastInsertRowid = '';
-        if (result.rows.length > 0 && result.rows[0].id) {
-          lastInsertRowid = result.rows[0].id;
+        if (Array.isArray(result) && result.length > 0 && (result[0] as any).id) {
+          lastInsertRowid = (result[0] as any).id;
         }
         return { changes, lastInsertRowid };
       }
@@ -110,12 +76,9 @@ export const database = {
   
   // 执行单条 SQL 语句
   async execute(sqlString: string, params: any[] = []): Promise<{ rows: any[]; rowCount: number }> {
-    const pool = getPool();
-    const result = await pool.query(sqlString, params);
-    return { 
-      rows: result.rows, 
-      rowCount: result.rowCount || 0 
-    };
+    const result = await sql.unsafe(sqlString, params);
+    const rows = Array.isArray(result) ? result : [result];
+    return { rows, rowCount: rows.length };
   }
 };
 

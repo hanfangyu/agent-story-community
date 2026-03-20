@@ -4,7 +4,7 @@
  */
 import { getPool, generateId } from '../lib/db/client';
 
-const pool = getPool();
+;
 
 // 随机选择数组元素
 function randomChoice<T>(arr: T[]): T {
@@ -21,15 +21,15 @@ async function seedData() {
 
   // 清空现有数据
   console.log('📋 清空现有数据...');
-  await pool.query(`DELETE FROM activities`);
-  await pool.query(`DELETE FROM karma_log`);
-  await pool.query(`DELETE FROM likes`);
-  await pool.query(`DELETE FROM comments`);
-  await pool.query(`DELETE FROM posts`);
-  await pool.query(`DELETE FROM group_members`);
-  await pool.query(`DELETE FROM groups`);
-  await pool.query(`DELETE FROM follows`);
-  await pool.query(`DELETE FROM agents`);
+  await sql.query(`DELETE FROM activities`);
+  await sql.query(`DELETE FROM karma_log`);
+  await sql.query(`DELETE FROM likes`);
+  await sql.query(`DELETE FROM comments`);
+  await sql.query(`DELETE FROM posts`);
+  await sql.query(`DELETE FROM group_members`);
+  await sql.query(`DELETE FROM groups`);
+  await sql.query(`DELETE FROM follows`);
+  await sql.query(`DELETE FROM agents`);
 
   // 示例 Agent 数据
   const agentNames = [
@@ -96,7 +96,7 @@ async function seedData() {
     const followingCount = randomInt(0, 50);
     const createdAt = new Date(now - randomInt(1, 90) * 24 * 60 * 60 * 1000).toISOString();
     
-    await pool.query(`
+    await sql.query(`
       INSERT INTO agents (id, name, bio, karma, posts_count, comments_count, likes_received, followers_count, following_count, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     `, [id, name, bio, karma, postsCount, commentsCount, likesReceived, followersCount, followingCount, createdAt]);
@@ -118,7 +118,7 @@ async function seedData() {
     const isHot = likesCount > 30 || commentsCount > 10;
     const createdAt = new Date(now - randomInt(1, 30) * 24 * 60 * 60 * 1000).toISOString();
     
-    await pool.query(`
+    await sql.query(`
       INSERT INTO posts (id, author_id, title, content, category, likes_count, comments_count, is_hot, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `, [id, authorId, title, content, category, likesCount, commentsCount, isHot ? 1 : 0, createdAt]);
@@ -139,7 +139,7 @@ async function seedData() {
       const likesCount = randomInt(0, 10);
       const createdAt = new Date(now - randomInt(1, 14) * 24 * 60 * 60 * 1000).toISOString();
       
-      await pool.query(`
+      await sql.query(`
         INSERT INTO comments (id, post_id, author_id, content, likes_count, created_at)
         VALUES ($1, $2, $3, $4, $5, $6)
       `, [id, post.id, authorId, content, likesCount, createdAt]);
@@ -168,7 +168,7 @@ async function seedData() {
       const createdAt = new Date(now - randomInt(1, 30) * 24 * 60 * 60 * 1000).toISOString();
       
       try {
-        await pool.query(`
+        await sql.query(`
           INSERT INTO likes (id, agent_id, target_type, target_id, created_at)
           VALUES ($1, $2, $3, $4, $5)
         `, [id, agentId, 'post', post.id, createdAt]);
@@ -199,7 +199,7 @@ async function seedData() {
       const createdAt = new Date(now - randomInt(1, 60) * 24 * 60 * 60 * 1000).toISOString();
       
       try {
-        await pool.query(`
+        await sql.query(`
           INSERT INTO follows (id, follower_id, following_id, created_at)
           VALUES ($1, $2, $3, $4)
         `, [id, followerId, followingId, createdAt]);
@@ -221,7 +221,7 @@ async function seedData() {
       const action = randomChoice(['post', 'comment', 'like', 'follow', 'join_group']);
       const createdAt = new Date(now - randomInt(1, 14) * 24 * 60 * 60 * 1000).toISOString();
       
-      await pool.query(`
+      await sql.query(`
         INSERT INTO activities (id, agent_id, action, created_at)
         VALUES ($1, $2, $3, $4)
       `, [id, agentId, action, createdAt]);
@@ -233,12 +233,12 @@ async function seedData() {
 
   // 统计最终数据
   console.log('\n📈 数据统计:');
-  const statsAgents = await pool.query(`SELECT COUNT(*) as count FROM agents`);
-  const statsPosts = await pool.query(`SELECT COUNT(*) as count FROM posts`);
-  const statsComments = await pool.query(`SELECT COUNT(*) as count FROM comments`);
-  const statsLikes = await pool.query(`SELECT COUNT(*) as count FROM likes`);
-  const statsFollows = await pool.query(`SELECT COUNT(*) as count FROM follows`);
-  const statsActivities = await pool.query(`SELECT COUNT(*) as count FROM activities`);
+  const statsAgents = await sql.query(`SELECT COUNT(*) as count FROM agents`);
+  const statsPosts = await sql.query(`SELECT COUNT(*) as count FROM posts`);
+  const statsComments = await sql.query(`SELECT COUNT(*) as count FROM comments`);
+  const statsLikes = await sql.query(`SELECT COUNT(*) as count FROM likes`);
+  const statsFollows = await sql.query(`SELECT COUNT(*) as count FROM follows`);
+  const statsActivities = await sql.query(`SELECT COUNT(*) as count FROM activities`);
 
   console.log(`  - Agents: ${statsAgents.rows[0]?.count || 0}`);
   console.log(`  - 帖子: ${statsPosts.rows[0]?.count || 0}`);
