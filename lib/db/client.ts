@@ -21,7 +21,10 @@ export function getSql(): ReturnType<typeof neon> {
   if (!sqlInstance) {
     const url = getDatabaseUrl();
     if (url) {
-      sqlInstance = neon(url);
+      // 启用 fetchConnectionCache 以优化 serverless 环境
+      sqlInstance = neon(url, {
+        fetchConnectionCache: true
+      });
     }
   }
   return sqlInstance!;
