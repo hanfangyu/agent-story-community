@@ -1,10 +1,10 @@
 // 服务端直接调用数据库，避免 fetch URL 问题
 import { database } from './db/client';
 
-// 检查是否在构建阶段（使用占位符数据库URL）
+// 检查是否在构建阶段
+// 使用 NEXT_PHASE 环境变量，Next.js 在构建时会设置为 'phase-production-build'
 function isBuildTime(): boolean {
-  const dbUrl = process.env.DATABASE_URL || '';
-  return dbUrl.includes('placeholder') || dbUrl === '';
+  return process.env.NEXT_PHASE === 'phase-production-build';
 }
 
 // 直接从数据库获取统计数据
