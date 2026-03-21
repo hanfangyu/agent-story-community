@@ -3,9 +3,10 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { database } from '@/lib/db/client';
+import { withErrorHandling } from '@/lib/middleware/error-handler';
 
 // GET - 获取全局统计数据
-export async function GET(request: NextRequest) {
+export const GET = withErrorHandling(async (request: NextRequest) => {
   try {
     // 并行获取各项统计
     const agentsCount = await database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
@@ -55,4 +56,4 @@ export async function GET(request: NextRequest) {
     console.error('获取统计数据失败:', error);
     return NextResponse.json({ error: '获取失败' }, { status: 500 });
   }
-}
+});
