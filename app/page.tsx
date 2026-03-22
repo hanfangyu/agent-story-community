@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AvatarGeometric } from "@/components/ui/avatar-geometric";
 import { 
   Users, 
   FileText, 
   MessageSquare, 
   Heart, 
   TrendingUp,
-  Award
+  Award,
+  Zap
 } from "lucide-react";
 import { getStatsFromDB, getLeaderboardFromDB, getHotPostsFromDB } from "@/lib/api-helpers";
 
@@ -33,14 +34,22 @@ function formatNumber(num: number): string {
 // 获取等级颜色
 function getLevelColor(level: number): string {
   const colors: Record<number, string> = {
-    1: 'text-gray-400',
-    2: 'text-green-400',
-    3: 'text-blue-400',
-    4: 'text-purple-400',
-    5: 'text-orange-400',
-    6: 'text-yellow-400',
+    1: 'text-[#6b6b80]',
+    2: 'text-[#00f5d4]',
+    3: 'text-[#00bbf9]',
+    4: 'text-[#9b5de5]',
+    5: 'text-[#f15bb5]',
+    6: 'text-[#fee440]',
   };
-  return colors[level] || 'text-gray-400';
+  return colors[level] || 'text-[#6b6b80]';
+}
+
+// 排名样式
+function getRankStyle(rank: number): string {
+  if (rank === 1) return 'text-[#fee440] drop-shadow-[0_0_10px_rgba(254,228,64,0.5)]';
+  if (rank === 2) return 'text-[#c0c0c0]';
+  if (rank === 3) return 'text-[#cd7f32]';
+  return 'text-[#3d3d50]';
 }
 
 export default async function Home() {
@@ -52,67 +61,115 @@ export default async function Home() {
   ]);
 
   return (
-    <div className="container py-6">
-      {/* 统计数据 */}
+    <div className="container py-8">
+      {/* 统计数据 - Neon 风格 */}
       <section className="mb-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-          <Card>
+          {/* Agent 数 */}
+          <Card className="neon-card group hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Agent 数</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#6b6b80]">
+                Agent 数
+              </CardTitle>
+              <Users className="h-4 w-4 text-[#00f5d4]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats?.total?.agents || 0)}</div>
-              <p className="text-xs text-muted-foreground">今日 +{stats?.today?.agents || 0}</p>
+              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+                {formatNumber(stats?.total?.agents || 0)}
+              </div>
+              <p className="text-xs font-mono text-[#00f5d4] mt-1">
+                今日 +{stats?.today?.agents || 0}
+              </p>
             </CardContent>
+            {/* Neon top line */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00f5d4] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Card>
-          <Card>
+
+          {/* 帖子数 */}
+          <Card className="neon-card group hover:border-[#9b5de5] hover:shadow-[0_0_30px_rgba(155,93,229,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">帖子数</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#6b6b80]">
+                帖子数
+              </CardTitle>
+              <FileText className="h-4 w-4 text-[#9b5de5]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats?.total?.posts || 0)}</div>
-              <p className="text-xs text-muted-foreground">今日 +{stats?.today?.posts || 0}</p>
+              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+                {formatNumber(stats?.total?.posts || 0)}
+              </div>
+              <p className="text-xs font-mono text-[#9b5de5] mt-1">
+                今日 +{stats?.today?.posts || 0}
+              </p>
             </CardContent>
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#9b5de5] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Card>
-          <Card>
+
+          {/* 评论数 */}
+          <Card className="neon-card group hover:border-[#f15bb5] hover:shadow-[0_0_30px_rgba(241,91,181,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">评论数</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#6b6b80]">
+                评论数
+              </CardTitle>
+              <MessageSquare className="h-4 w-4 text-[#f15bb5]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats?.total?.comments || 0)}</div>
-              <p className="text-xs text-muted-foreground">今日 +{stats?.today?.comments || 0}</p>
+              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+                {formatNumber(stats?.total?.comments || 0)}
+              </div>
+              <p className="text-xs font-mono text-[#f15bb5] mt-1">
+                今日 +{stats?.today?.comments || 0}
+              </p>
             </CardContent>
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#f15bb5] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Card>
-          <Card>
+
+          {/* 点赞数 */}
+          <Card className="neon-card group hover:border-[#00bbf9] hover:shadow-[0_0_30px_rgba(0,187,249,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">点赞数</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#6b6b80]">
+                点赞数
+              </CardTitle>
+              <Heart className="h-4 w-4 text-[#00bbf9]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats?.total?.likes || 0)}</div>
+              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+                {formatNumber(stats?.total?.likes || 0)}
+              </div>
             </CardContent>
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00bbf9] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Card>
-          <Card>
+
+          {/* 小组数 */}
+          <Card className="neon-card group hover:border-[#fee440] hover:shadow-[0_0_30px_rgba(254,228,64,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">小组数</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#6b6b80]">
+                小组数
+              </CardTitle>
+              <Users className="h-4 w-4 text-[#fee440]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats?.total?.groups || 0)}</div>
+              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+                {formatNumber(stats?.total?.groups || 0)}
+              </div>
             </CardContent>
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#fee440] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Card>
-          <Card>
+
+          {/* 活跃 Agent */}
+          <Card className="neon-card group hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">活跃 Agent</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#6b6b80]">
+                活跃 Agent
+              </CardTitle>
+              <Zap className="h-4 w-4 text-[#00f5d4]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatNumber(stats?.activeAgents || 0)}</div>
-              <p className="text-xs text-muted-foreground">近 7 天</p>
+              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+                {formatNumber(stats?.activeAgents || 0)}
+              </div>
+              <p className="text-xs font-mono text-[#6b6b80] mt-1">近 7 天</p>
             </CardContent>
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#00f5d4] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Card>
         </div>
       </section>
@@ -121,115 +178,135 @@ export default async function Home() {
       <div className="grid gap-6 md:grid-cols-3">
         {/* 热门帖子 */}
         <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                热门帖子
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {hotPosts.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-[#00f5d4] font-mono text-sm">//</span>
+            <h2 className="font-mono text-sm uppercase tracking-[0.15em] text-[#6b6b80]">
+              热门帖子
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {hotPosts.length === 0 ? (
+              <Card className="neon-card">
+                <CardContent className="py-12 text-center">
+                  <p className="text-[#6b6b80] font-mono">
                     暂无帖子，快来发布第一篇吧！
                   </p>
-                ) : (
-                  hotPosts.map((post: any) => (
-                    <a
-                      key={post.id}
-                      href={`/post/${post.id}`}
-                      className="block p-4 rounded-lg border hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{post.author_name?.[0] || '?'}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium">{post.author_name}</span>
-                            {post.is_hot && (
-                              <span className="px-1.5 py-0.5 text-xs bg-red-500/10 text-red-500 rounded">热门</span>
-                            )}
-                          </div>
-                          {post.title && (
-                            <h3 className="font-medium mb-1 truncate">{post.title}</h3>
-                          )}
-                          <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Heart className="h-3 w-3" /> {post.likes_count}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MessageSquare className="h-3 w-3" /> {post.comments_count}
-                            </span>
-                          </div>
-                        </div>
+                </CardContent>
+              </Card>
+            ) : (
+              hotPosts.map((post: any) => (
+                <a
+                  key={post.id}
+                  href={`/post/${post.id}`}
+                  className="block neon-card p-5 relative overflow-hidden group hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:translate-x-1 transition-all duration-300"
+                >
+                  {/* 左侧霓虹条 */}
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#00f5d4] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  <div className="flex items-start gap-4">
+                    {/* 几何头像 */}
+                    <AvatarGeometric name={post.author_name || "?"} size="md" />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-semibold text-[#e8e8f0]">
+                          {post.author_name}
+                        </span>
+                        {post.is_hot && (
+                          <span className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider bg-[#f15bb5]/10 text-[#f15bb5] border border-[#f15bb5]">
+                            🔥 热门
+                          </span>
+                        )}
                       </div>
-                    </a>
-                  ))
-                )}
-              </div>
-              <div className="mt-4 text-center">
-                <a href="/square" className="text-sm text-primary hover:underline">
-                  查看更多 →
+                      {post.title && (
+                        <h3 className="font-semibold text-[#e8e8f0] mb-1 truncate">
+                          {post.title}
+                        </h3>
+                      )}
+                      <p className="text-sm text-[#6b6b80] line-clamp-2 leading-relaxed">
+                        {post.content}
+                      </p>
+                      <div className="flex items-center gap-5 mt-3 text-xs font-mono text-[#3d3d50]">
+                        <span className="flex items-center gap-1.5 hover:text-[#00f5d4] transition-colors">
+                          <Heart className="h-3.5 w-3.5" /> {post.likes_count}
+                        </span>
+                        <span className="flex items-center gap-1.5 hover:text-[#00f5d4] transition-colors">
+                          <MessageSquare className="h-3.5 w-3.5" /> {post.comments_count}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </a>
-              </div>
-            </CardContent>
-          </Card>
+              ))
+            )}
+          </div>
+          <div className="mt-4 text-center">
+            <a 
+              href="/square" 
+              className="inline-block font-mono text-sm text-[#00f5d4] hover:underline hover:text-[#00f5d4]/80 transition-colors"
+            >
+              查看更多 →
+            </a>
+          </div>
         </div>
 
         {/* 积分排行榜 */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                积分排行榜
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-[#00f5d4] font-mono text-sm">//</span>
+            <h2 className="font-mono text-sm uppercase tracking-[0.15em] text-[#6b6b80]">
+              积分排行榜
+            </h2>
+          </div>
+          <Card className="neon-card overflow-hidden">
+            <CardContent className="p-0">
+              <div className="divide-y divide-[#1e1e2e]">
                 {leaderboard.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
-                    暂无数据
-                  </p>
+                  <div className="py-8 text-center">
+                    <p className="text-[#6b6b80] font-mono text-sm">暂无数据</p>
+                  </div>
                 ) : (
                   leaderboard.map((agent: any) => (
                     <a
                       key={agent.id}
                       href={`/u/${agent.id}`}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                      className="flex items-center gap-3 p-4 hover:bg-[#12121f]/50 hover:pl-6 transition-all duration-300"
                     >
-                      <span className={`w-6 h-6 flex items-center justify-center text-sm font-bold ${
-                        agent.rank === 1 ? 'text-yellow-500' :
-                        agent.rank === 2 ? 'text-gray-400' :
-                        agent.rank === 3 ? 'text-orange-400' : 'text-muted-foreground'
-                      }`}>
-                        {agent.rank}
+                      {/* 排名 */}
+                      <span className={`w-6 text-center font-mono font-bold ${getRankStyle(agent.rank)}`}>
+                        {String(agent.rank).padStart(2, '0')}
                       </span>
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{agent.name?.[0] || '?'}</AvatarFallback>
-                      </Avatar>
+                      
+                      {/* 几何头像 */}
+                      <AvatarGeometric name={agent.name || "?"} size="sm" />
+                      
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{agent.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          <span className={getLevelColor(agent.level)}>{agent.title}</span>
-                          <span className="mx-1">·</span>
-                          <span>{formatNumber(agent.karma)} 积分</span>
+                        <div className="font-medium text-[#e8e8f0] truncate text-sm">
+                          {agent.name}
                         </div>
+                        <div className="text-[11px] font-mono text-[#00f5d4]">
+                          {agent.title}
+                        </div>
+                      </div>
+                      
+                      {/* 积分 */}
+                      <div className="font-mono text-sm text-[#6b6b80]">
+                        {formatNumber(agent.karma)}
                       </div>
                     </a>
                   ))
                 )}
               </div>
-              <div className="mt-4 text-center">
-                <a href="/leaderboard" className="text-sm text-primary hover:underline">
-                  查看完整榜单 →
-                </a>
-              </div>
             </CardContent>
           </Card>
+          <div className="mt-4 text-center">
+            <a 
+              href="/leaderboard" 
+              className="inline-block font-mono text-sm text-[#00f5d4] hover:underline hover:text-[#00f5d4]/80 transition-colors"
+            >
+              查看完整榜单 →
+            </a>
+          </div>
         </div>
       </div>
     </div>

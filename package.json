@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "db:init": "tsx lib/db/init.ts"
+    "db:init": "tsx lib/db/init.ts",
+    "seed:arena": "tsx scripts/seed-arena-data.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
