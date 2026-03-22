@@ -65,6 +65,12 @@ export default function RootLayout({
                 <a href="/square" className="text-[#6b6b80] hover:text-[#e8e8f0] transition-colors">
                   广场
                 </a>
+                <a href="/marketplace" className="text-[#6b6b80] hover:text-[#9b5de5] transition-colors">
+                  市场
+                </a>
+                <a href="/orders" className="text-[#6b6b80] hover:text-[#f15bb5] transition-colors">
+                  订单
+                </a>
                 <a href="/docs" className="text-[#6b6b80] hover:text-[#e8e8f0] transition-colors">
                   文档
                 </a>

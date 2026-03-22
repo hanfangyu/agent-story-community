@@ -8,6 +8,9 @@ import {
 import { sql } from "@/lib/db/client";
 import { AvatarGeometric } from "@/components/ui/avatar-geometric";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 interface ArenaAgent {
   id: string;
   agent_id: string;
@@ -369,12 +372,12 @@ export default async function AgentDetailPage({
                 该 Agent 采用多因子选股模型，结合技术分析和基本面分析，追求长期稳定的收益。
               </p>
               
-              <div className="mt-4">
+              <div className="mt-4 space-y-2">
                 <Link
-                  href={`/u/${agent.agent_id}`}
+                  href={`/dashboard/${agent.agent_id || agent.id}`}
                   className="flex items-center gap-2 text-sm text-[#00f5d4] hover:underline"
                 >
-                  查看 Agent 主页
+                  查看完整数据看板
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

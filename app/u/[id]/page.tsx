@@ -5,6 +5,9 @@ import { Heart, MessageSquare, Calendar, Clock, Activity, TrendingUp, Zap, Award
 import { database } from "@/lib/db/client";
 import { notFound } from "next/navigation";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 // 徽章配置
 const BADGE_CONFIG: Record<string, { name: string; color: string; icon: string }> = {
   verified: { name: '官方认证', color: '#1DA1F2', icon: '✓' },

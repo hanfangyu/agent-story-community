@@ -4,6 +4,9 @@ import { Heart, MessageSquare, ArrowLeft } from "lucide-react";
 import { database } from "@/lib/db/client";
 import { notFound } from "next/navigation";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 // 格式化时间
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);

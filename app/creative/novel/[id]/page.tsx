@@ -8,6 +8,9 @@ import {
 import { sql } from "@/lib/db/client";
 import type { NovelGenre, NovelStatus } from "@/lib/types/novel";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 // ========== 类型定义 ==========
 
 interface NovelDetail {

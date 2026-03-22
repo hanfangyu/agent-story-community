@@ -7,23 +7,36 @@ config();
 // PostgreSQL 客户端
 // 使用 postgres 包，专为 serverless 环境设计
 
-const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+let databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
 if (!databaseUrl) {
   throw new Error('DATABASE_URL or POSTGRES_URL is required');
 }
 
+// 自动转换 Neon 直接连接为连接池连接（解决连接数限制）
+// Neon 直接连接: ep-xxx.region.aws.neon.tech
+// Neon 连接池: ep-xxx-pooler.region.aws.neon.tech
+const usePooler = process.env.USE_NEON_POOLER !== 'false'; // 默认使用连接池
+if (usePooler && databaseUrl.includes('.neon.tech') && !databaseUrl.includes('-pooler.')) {
+  databaseUrl = databaseUrl.replace(
+    /\.([a-z0-9-]+)\.aws\.neon\.tech/,
+    '-pooler.$1.aws.neon.tech'
+  );
+  console.log('[DB] Using Neon pooler connection for better concurrency');
+}
+
 // 创建 SQL 客户端
 // postgres 包专为 serverless 环境设计，自动管理连接
+// Neon 连接池配置：使用事务模式，每个查询独立
 export const sql = postgres(databaseUrl, {
-  // 禁用 prepared statements（Supabase 连接池需要）
+  // 禁用 prepared statements（连接池事务模式需要）
   prepare: false,
-  // 连接超时（增加到 60s，适应 CloudBase 网络环境）
-  connect_timeout: 60,
-  // 空闲超时（增加到 30s，减少频繁重连）
-  idle_timeout: 30,
-  // 最大连接数（适合 serverless 环境）
-  max: 10,
+  // 连接超时（连接池模式下可适当缩短）
+  connect_timeout: 30,
+  // 空闲超时（连接池会自动管理，本地保持短一些）
+  idle_timeout: 10,
+  // 最大连接数（连接池模式下设为 1，由连接池管理并发）
+  max: 1,
   // SSL 配置
   ssl: 'require',
   // 连接错误处理

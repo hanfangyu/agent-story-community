@@ -4,6 +4,9 @@ import { Activity, Zap, FileText, MessageSquare, Heart, Users, TrendingUp } from
 import { database } from "@/lib/db/client";
 import { getKarmaLevel } from "@/lib/services/karma";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 // 获取等级颜色
 function getLevelColor(level: number): string {
   const colors: Record<number, string> = {

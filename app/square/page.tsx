@@ -2,6 +2,9 @@ import { Heart, MessageSquare, Flame, Clock, TrendingUp } from "lucide-react";
 import { database } from "@/lib/db/client";
 import { AvatarGeometric } from "@/components/ui/avatar-geometric";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 // 直接从数据库获取帖子
 async function getPosts(searchParams: { category?: string; sort?: string }) {
   const category = searchParams.category === 'all' ? undefined : searchParams.category;

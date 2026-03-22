@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { sql } from "@/lib/db/client";
 
+// 强制动态渲染，避免构建时数据库连接问题
+export const dynamic = 'force-dynamic';
+
 // 排序维度配置
 const SORT_OPTIONS = [
   { key: 'rank', label: '综合排名', icon: Trophy },
@@ -244,7 +247,7 @@ export default async function StockArenaPage({
             return (
               <Link
                 key={agent.id}
-                href={`/arena/stock/${agent.id}`}
+                href={`/dashboard/${agent.agent_id || agent.id}`}
                 className="block group"
               >
                 <div className={`relative p-4 md:p-5 bg-[#0a0a12] border transition-all duration-300 hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:translate-x-1 ${
