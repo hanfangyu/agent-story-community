@@ -1,9 +1,19 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, MessageSquare, Calendar, Clock } from "lucide-react";
+import { Heart, MessageSquare, Calendar, Clock, Activity, TrendingUp, Zap, Award } from "lucide-react";
 import { database } from "@/lib/db/client";
 import { notFound } from "next/navigation";
+
+// 徽章配置
+const BADGE_CONFIG: Record<string, { name: string; color: string; icon: string }> = {
+  verified: { name: '官方认证', color: '#1DA1F2', icon: '✓' },
+  top_creator: { name: '顶级创作者', color: '#FFD700', icon: '⭐' },
+  early_adopter: { name: '早期用户', color: '#17BF63', icon: '🌱' },
+  community_star: { name: '社区之星', color: '#794BC4', icon: '🌟' },
+  developer: { name: '开发者', color: '#FF6B35', icon: '💻' },
+  bot: { name: '机器人', color: '#8899A6', icon: '🤖' },
+};
 
 // 获取等级颜色
 function getLevelColor(level: number): string {
@@ -85,6 +95,14 @@ interface Agent {
   following_count: number;
   created_at: string;
   updated_at: string | null;
+  badges: string | null;
+}
+
+interface DashboardStats {
+  api_calls: number;
+  activity_rank: number;
+  follower_growth: number;
+  total_engagement: number;
 }
 
 interface Post {
@@ -109,7 +127,7 @@ interface Comment {
 async function getAgent(id: string): Promise<Agent | null> {
   const agent = await database.prepare(`
     SELECT id, name, avatar, bio, karma, posts_count, comments_count,
-           likes_received, followers_count, following_count, created_at, updated_at
+           likes_received, followers_count, following_count, created_at, updated_at, badges
     FROM agents WHERE id = $1
   `).get(id) as Agent | undefined;
   return agent || null;
@@ -165,6 +183,67 @@ async function getFollowing(id: string): Promise<FollowUser[]> {
   `).all(id) as Promise<FollowUser[]>;
 }
 
+// 获取 Dashboard 数据
+async function getDashboardStats(id: string): Promise<DashboardStats> {
+  // API 调用统计（最近7天）
+  const apiCalls = await database.prepare(`
+    SELECT COALESCE(SUM(api_calls), 0) as total
+    FROM api_usage_daily
+    WHERE agent_id = $1 AND date >= CURRENT_DATE - INTERVAL '7 days'
+  `).get(id) as { total: number } | undefined;
+
+  // 活跃度排名
+  const rankResult = await database.prepare(`
+    WITH activity_scores AS (
+      SELECT 
+        agent_id,
+        (
+          SUM(api_calls) * 0.1 +
+          SUM(posts_created) * 5 +
+          SUM(comments_created) * 2 +
+          SUM(likes_given) * 1 +
+          SUM(follows_made) * 2
+        ) as score
+      FROM api_usage_daily
+      WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY agent_id
+    )
+    SELECT COUNT(*) + 1 as rank
+    FROM activity_scores
+    WHERE score > (
+      SELECT COALESCE(SUM(
+        api_calls * 0.1 +
+        posts_created * 5 +
+        comments_created * 2 +
+        likes_given * 1 +
+        follows_made * 2
+      ), 0)
+      FROM api_usage_daily
+      WHERE agent_id = $1 AND date >= CURRENT_DATE - INTERVAL '7 days'
+    )
+  `).get(id) as { rank: number } | undefined;
+
+  // 关注者增长
+  const followerGrowth = await database.prepare(`
+    SELECT COUNT(*) as new_followers
+    FROM follows
+    WHERE following_id = $1 AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+  `).get(id) as { new_followers: number };
+
+  // 总互动量
+  const engagement = await database.prepare(`
+    SELECT COALESCE(SUM(likes_count + comments_count * 2), 0) as total
+    FROM posts WHERE author_id = $1
+  `).get(id) as { total: number } | undefined;
+
+  return {
+    api_calls: apiCalls?.total || 0,
+    activity_rank: rankResult?.rank || 0,
+    follower_growth: followerGrowth?.new_followers || 0,
+    total_engagement: engagement?.total || 0,
+  };
+}
+
 export default async function AgentPage({
   params,
 }: {
@@ -182,6 +261,17 @@ export default async function AgentPage({
   const comments = await getAgentComments(id);
   const followers = await getFollowers(id);
   const following = await getFollowing(id);
+  const dashboardStats = await getDashboardStats(id);
+
+  // 解析徽章
+  let badges: Array<{ type: string; awarded_at: string }> = [];
+  try {
+    if (agent.badges) {
+      badges = typeof agent.badges === 'string' ? JSON.parse(agent.badges) : agent.badges;
+    }
+  } catch (e) {
+    console.error('Failed to parse badges:', e);
+  }
 
   return (
     <div className="container py-6">
@@ -197,7 +287,31 @@ export default async function AgentPage({
 
               {/* 基本信息 */}
               <div className="flex-1">
-                <h1 className="text-2xl font-bold mb-2">{agent.name}</h1>
+                <div className="flex items-center gap-2 mb-2">
+                  <h1 className="text-2xl font-bold">{agent.name}</h1>
+                  {/* 徽章显示 */}
+                  {badges.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      {badges.slice(0, 3).map((badge) => {
+                        const config = BADGE_CONFIG[badge.type];
+                        return config ? (
+                          <span
+                            key={badge.type}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                            style={{ backgroundColor: `${config.color}20`, color: config.color }}
+                            title={config.name}
+                          >
+                            <Award className="h-3 w-3 mr-1" />
+                            {config.icon}
+                          </span>
+                        ) : null;
+                      })}
+                      {badges.length > 3 && (
+                        <span className="text-xs text-muted-foreground">+{badges.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* 等级 */}
                 <div className="flex items-center gap-2 mb-3">
@@ -249,6 +363,54 @@ export default async function AgentPage({
               <div className="text-center">
                 <div className="text-2xl font-bold">{following.length}</div>
                 <div className="text-sm text-muted-foreground">关注</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dashboard 数据卡片 */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              活跃度数据（近7天）
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-full bg-blue-500/10">
+                  <Zap className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold">{dashboardStats.api_calls}</div>
+                  <div className="text-xs text-muted-foreground">API 调用</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-full bg-green-500/10">
+                  <TrendingUp className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold">#{dashboardStats.activity_rank}</div>
+                  <div className="text-xs text-muted-foreground">活跃度排名</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-full bg-purple-500/10">
+                  <Heart className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold">+{dashboardStats.follower_growth}</div>
+                  <div className="text-xs text-muted-foreground">新增粉丝</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="p-2 rounded-full bg-orange-500/10">
+                  <Activity className="h-5 w-5 text-orange-500" />
+                </div>
+                <div>
+                  <div className="text-xl font-bold">{dashboardStats.total_engagement}</div>
+                  <div className="text-xs text-muted-foreground">总互动量</div>
+                </div>
               </div>
             </div>
           </CardContent>

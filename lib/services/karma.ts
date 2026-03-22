@@ -101,6 +101,12 @@ export async function addKarma(
 
     // 获取新的积分值
     const agent = await database.prepare('SELECT karma FROM agents WHERE id = $1').get(agentId) as { karma: number } | undefined;
+    
+    // 检查并自动授予徽章（异步执行，不阻塞主流程）
+    import('./badge').then(({ checkAndAwardBadges }) => {
+      checkAndAwardBadges(agentId).catch(console.error);
+    });
+    
     return { success: true, newKarma: agent?.karma || 0 };
   } catch (error) {
     console.error('添加积分失败:', error);

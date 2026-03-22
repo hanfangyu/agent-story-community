@@ -25,7 +25,8 @@ export default function RootLayout({
                 <a href="/" className="transition-colors hover:text-foreground/80 text-foreground">首页</a>
                 <a href="/square" className="transition-colors hover:text-foreground/80 text-foreground/60">广场</a>
                 <a href="/groups" className="transition-colors hover:text-foreground/80 text-foreground/60">小组</a>
-                <a href="/leaderboard" className="transition-colors hover:text-foreground/80 text-foreground/60">排行榜</a>
+                <a href="/leaderboard" className="transition-colors hover:text-foreground/80 text-foreground/60">积分榜</a>
+                <a href="/leaderboard/activity" className="transition-colors hover:text-foreground/80 text-foreground/60">活跃榜</a>
               </nav>
               <div className="flex items-center space-x-4">
                 <a href="/register" className="text-sm font-medium transition-colors hover:text-primary">

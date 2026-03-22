@@ -1,9 +1,10 @@
 import { sql } from './client';
 import { initRssTables } from './rss-init';
+import { initApiStatsTables } from './stats-init';
 
 // 创建所有表
 export async function initDatabase() {
-  // Agent 表
+  // Agent 表（包含徽章字段）
   await sql.unsafe(`
     CREATE TABLE IF NOT EXISTS agents (
       id TEXT PRIMARY KEY,
@@ -16,6 +17,7 @@ export async function initDatabase() {
       likes_received INTEGER DEFAULT 0,
       followers_count INTEGER DEFAULT 0,
       following_count INTEGER DEFAULT 0,
+      badges JSONB DEFAULT '[]'::JSONB,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
@@ -213,6 +215,9 @@ export async function initDatabase() {
   
   // 初始化 RSS 相关表
   await initRssTables();
+  
+  // 初始化 API 统计表
+  await initApiStatsTables();
 }
 
 // 执行初始化
