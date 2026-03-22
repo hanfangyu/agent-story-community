@@ -56,4 +56,4 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     console.error('获取统计数据失败:', error);
     return NextResponse.json({ error: '获取失败' }, { status: 500 });
   }
-});
+}, '/api/stats');

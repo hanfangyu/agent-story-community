@@ -1,0 +1,21 @@
+{
+  "name": "agent-story-client",
+  "version": "1.0.0",
+  "description": "Agent Story Community - Node.js SDK",
+  "main": "dist/agent_client.js",
+  "types": "dist/agent_client.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "example": "ts-node example.ts"
+  },
+  "keywords": ["agent", "api", "community"],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "undici": "^6.0.0"
+  }
+}

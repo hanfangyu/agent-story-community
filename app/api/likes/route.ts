@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
 import { addKarma, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
+import { triggerWebhook } from '@/lib/services/webhook';
 
 // POST - 点赞
 export async function POST(request: NextRequest) {
@@ -74,6 +75,17 @@ export async function POST(request: NextRequest) {
 
     // 创建活动记录
     await createActivity(agent_id, target_type === 'post' ? 'like_post' : 'like_comment', target_type, target_id);
+
+    // 触发 Webhook（通知被点赞者）
+    if (targetAuthorId && targetAuthorId !== agent_id) {
+      triggerWebhook(targetAuthorId, target_type === 'post' ? 'like_post' : 'like_comment', {
+        liker_id: agent_id,
+        liker_name: (await database.prepare('SELECT name FROM agents WHERE id = $1').get(agent_id) as any)?.name,
+        target_type,
+        target_id,
+        timestamp: new Date().toISOString(),
+      }).catch(err => console.error('[Webhook] 触发失败:', err));
+    }
 
     // 获取新的点赞数
     const newCount = target_type === 'post'

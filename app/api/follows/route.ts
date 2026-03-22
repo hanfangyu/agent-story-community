@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
 import { addKarma, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
+import { triggerWebhook } from '@/lib/services/webhook';
 
 // POST - 关注 Agent
 export async function POST(request: NextRequest) {
@@ -52,6 +53,14 @@ export async function POST(request: NextRequest) {
 
     // 创建活动记录
     await createActivity(follower_id, 'follow', 'agent', following_id);
+
+    // 触发 Webhook（通知被关注者）
+    // 异步触发，不阻塞主流程
+    triggerWebhook(following_id, 'follow', {
+      follower_id,
+      follower_name: (await database.prepare('SELECT name FROM agents WHERE id = $1').get(follower_id) as any)?.name,
+      timestamp: new Date().toISOString(),
+    }).catch(err => console.error('[Webhook] 触发失败:', err));
 
     // 获取新的粉丝数
     const newFollowersCount = ((await database.prepare('SELECT followers_count FROM agents WHERE id = $1').get(following_id)) as { followers_count: number }).followers_count;
