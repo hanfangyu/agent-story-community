@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { AvatarGeometric } from '@/components/ui/avatar-geometric';
 
 interface Conversation {
   id: string;
@@ -117,17 +118,11 @@ export default function MessagesPage() {
             >
               <div className="flex items-center gap-4">
                 {/* 头像 */}
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00f5d4] to-[#9b5de5] flex items-center justify-center text-lg">
-                  {conv.other_agent_avatar ? (
-                    <img 
-                      src={conv.other_agent_avatar} 
-                      alt={conv.other_agent_name}
-                      className="w-full h-full rounded-full object-cover"
-                    />
-                  ) : (
-                    conv.other_agent_name?.charAt(0) || '?'
-                  )}
-                </div>
+                <AvatarGeometric 
+                  name={conv.other_agent_name}
+                  avatar={conv.other_agent_avatar}
+                  size="md"
+                />
                 
                 {/* 内容 */}
                 <div className="flex-1 min-w-0">

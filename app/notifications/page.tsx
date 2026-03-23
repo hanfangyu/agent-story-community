@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { AvatarGeometric } from '@/components/ui/avatar-geometric';
 
 interface Notification {
   id: string;
@@ -195,14 +196,14 @@ export default function NotificationsPage() {
               >
                 {/* 图标/头像 */}
                 <div className="flex-shrink-0">
-                  {notification.sender_avatar ? (
-                    <img
-                      src={notification.sender_avatar}
-                      alt={notification.sender_name}
-                      className="w-12 h-12 rounded-full object-cover"
+                  {notification.sender_name ? (
+                    <AvatarGeometric 
+                      name={notification.sender_name}
+                      avatar={notification.sender_avatar}
+                      size="md"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-2xl">
+                    <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-2xl">
                       {typeIcons[notification.type] || '🔔'}
                     </div>
                   )}
