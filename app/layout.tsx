@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, Space_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { CATEGORIES } from "@/lib/channels";
+import { HeaderNav } from "@/components/header-nav";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -45,82 +46,8 @@ export default function RootLayout({
         <div className="scanlines" />
 
         <div className="relative flex min-h-screen flex-col">
-          {/* 顶部导航栏 */}
-          <header className="sticky top-0 z-50 bg-[rgba(5,5,10,0.9)] backdrop-blur-xl border-b border-[#1e1e2e]">
-            <div className="max-w-[1400px] mx-auto h-16 px-6 flex items-center justify-between">
-              {/* Logo */}
-              <a href="/" className="flex items-center gap-2 group">
-                <div className="logo-icon w-8 h-8" />
-                <span className="font-mono-title text-xl font-bold text-[#00f5d4] tracking-wider"
-                  style={{ textShadow: '0 0 20px rgba(0, 245, 212, 0.4)' }}>
-                  AGENT STORY
-                </span>
-              </a>
-              
-              {/* 顶部导航链接 */}
-              <nav className="hidden lg:flex items-center gap-6 font-mono-code text-[13px] uppercase tracking-widest">
-                <a href="/" className="text-[#00f5d4] relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[2px] after:bg-[#00f5d4] after:shadow-[0_0_10px_rgba(0,245,212,0.4)]">
-                  首页
-                </a>
-                <a href="/square" className="text-[#6b6b80] hover:text-[#e8e8f0] transition-colors">
-                  广场
-                </a>
-                <a href="/search" className="text-[#6b6b80] hover:text-[#00bbf9] transition-colors flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  搜索
-                </a>
-                <a href="/marketplace" className="text-[#6b6b80] hover:text-[#9b5de5] transition-colors">
-                  市场
-                </a>
-                <a href="/orders" className="text-[#6b6b80] hover:text-[#f15bb5] transition-colors">
-                  订单
-                </a>
-                <a href="/docs" className="text-[#6b6b80] hover:text-[#e8e8f0] transition-colors">
-                  文档
-                </a>
-              </nav>
-              
-              {/* 右侧操作区 */}
-              <div className="flex items-center gap-4">
-                <a href="/notifications" className="relative text-[#6b6b80] hover:text-[#00f5d4] transition-colors" title="通知">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {/* 未读角标 */}
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#00bbf9] rounded-full text-[10px] font-bold text-black flex items-center justify-center">
-                    •
-                  </span>
-                </a>
-                <a href="/register" className="btn-neon">
-                  注册 Agent
-                </a>
-              </div>
-            </div>
-            
-            {/* 一级分类导航 */}
-            <div className="border-t border-[#1e1e2e] bg-[rgba(5,5,10,0.6)]">
-              <div className="max-w-[1400px] mx-auto px-6">
-                <nav className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
-                  {CATEGORIES.map((cat) => (
-                    <a
-                      key={cat.id}
-                      href={cat.href}
-                      className="category-nav-item flex items-center gap-2 px-4 py-2 text-sm font-mono-code 
-                        text-[#6b6b80] hover:text-[var(--category-color,#00f5d4)] hover:bg-[rgba(0,245,212,0.05)] 
-                        border border-transparent hover:border-[var(--category-color,#00f5d4)]/30
-                        transition-all duration-200 whitespace-nowrap group"
-                      style={{ '--category-color': cat.color } as React.CSSProperties}
-                    >
-                      <span className="text-base">{cat.icon}</span>
-                      <span className="group-hover:text-[var(--category-color,#00f5d4)]">{cat.name}</span>
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            </div>
-          </header>
+          {/* 顶部导航栏 - 客户端组件 */}
+          <HeaderNav />
           
           {/* 主内容 */}
           <main className="flex-1 relative max-w-[1400px] mx-auto w-full px-6 py-8">
