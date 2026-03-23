@@ -101,29 +101,29 @@ export default async function SquarePage({
           {/* 左侧：帖子列表 */}
           <div className="flex-1">
             {/* 顶部操作栏 */}
-            <div className="flex items-center justify-between mb-4 p-4 bg-[#0a0a12] border border-[#1e1e2e]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4 p-3 sm:p-4 bg-[#0a0a12] border border-[#1e1e2e]">
               {/* 排序按钮 */}
               <div className="flex gap-2">
                 <a
                   href={`/square${currentCategory !== 'all' ? `?category=${currentCategory}` : ''}`}
-                  className={`px-4 py-2 font-mono text-sm uppercase tracking-wider transition-all duration-300 ${
+                  className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 font-mono text-sm uppercase tracking-wider transition-all duration-300 text-center ${
                     currentSort === 'latest' 
                       ? 'bg-[#00f5d4] text-[#05050a] font-bold' 
                       : 'bg-transparent border border-[#1e1e2e] text-[#6b6b80] hover:border-[#00f5d4] hover:text-[#00f5d4]'
                   }`}
                 >
-                  <Clock className="w-4 h-4 inline mr-2" />
+                  <Clock className="w-4 h-4 inline mr-1 sm:mr-2" />
                   最新
                 </a>
                 <a
                   href={`/square?sort=hot${currentCategory !== 'all' ? `&category=${currentCategory}` : ''}`}
-                  className={`px-4 py-2 font-mono text-sm uppercase tracking-wider transition-all duration-300 ${
+                  className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 font-mono text-sm uppercase tracking-wider transition-all duration-300 text-center ${
                     currentSort === 'hot' 
                       ? 'bg-[#f15bb5] text-[#05050a] font-bold' 
                       : 'bg-transparent border border-[#1e1e2e] text-[#6b6b80] hover:border-[#f15bb5] hover:text-[#f15bb5]'
                   }`}
                 >
-                  <Flame className="w-4 h-4 inline mr-2" />
+                  <Flame className="w-4 h-4 inline mr-1 sm:mr-2" />
                   热门
                 </a>
               </div>
@@ -131,7 +131,7 @@ export default async function SquarePage({
               {/* 发帖按钮 */}
               <a 
                 href="/post/create"
-                className="hidden md:flex items-center px-4 py-2 bg-transparent border border-[#00f5d4] text-[#00f5d4] font-mono text-sm uppercase tracking-wider hover:bg-[#00f5d4] hover:text-[#05050a] transition-all duration-300"
+                className="hidden sm:flex items-center px-4 py-2 bg-transparent border border-[#00f5d4] text-[#00f5d4] font-mono text-sm uppercase tracking-wider hover:bg-[#00f5d4] hover:text-[#05050a] transition-all duration-300"
               >
                 + 发布帖子
               </a>
@@ -158,18 +158,18 @@ export default async function SquarePage({
                     href={`/post/${post.id}`}
                     className="block group"
                   >
-                    <div className="relative p-5 bg-[#0a0a12] border border-[#1e1e2e] transition-all duration-300 hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:translate-x-1">
+                    <div className="relative p-4 sm:p-5 bg-[#0a0a12] border border-[#1e1e2e] transition-all duration-300 hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:translate-x-1">
                       {/* 左侧霓虹边框效果 */}
                       <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#00f5d4] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3 sm:gap-4">
                         {/* 几何头像 */}
-                        <AvatarGeometric name={post.author_name || "Unknown"} size="md" />
+                        <AvatarGeometric name={post.author_name || "Unknown"} size="sm" />
                         
                         <div className="flex-1 min-w-0">
                           {/* 作者信息 */}
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="font-semibold text-[#e8e8f0] group-hover:text-[#00f5d4] transition-colors">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                            <span className="font-semibold text-sm sm:text-base text-[#e8e8f0] group-hover:text-[#00f5d4] transition-colors">
                               {post.author_name}
                             </span>
                             {post.is_hot && (
@@ -185,18 +185,18 @@ export default async function SquarePage({
                           
                           {/* 标题 */}
                           {post.title && (
-                            <h3 className="font-semibold text-[#e8e8f0] mb-1 group-hover:text-[#00f5d4] transition-colors">
+                            <h3 className="font-semibold text-sm sm:text-base text-[#e8e8f0] mb-1 group-hover:text-[#00f5d4] transition-colors">
                               {post.title}
                             </h3>
                           )}
                           
                           {/* 内容预览 */}
-                          <p className="text-sm text-[#6b6b80] line-clamp-2 mb-3">
+                          <p className="text-xs sm:text-sm text-[#6b6b80] line-clamp-2 mb-3">
                             {post.content}
                           </p>
                           
                           {/* 互动数据 */}
-                          <div className="flex items-center gap-5 text-xs font-mono text-[#3d3d50]">
+                          <div className="flex items-center gap-4 sm:gap-5 text-xs font-mono text-[#3d3d50]">
                             <span className="flex items-center gap-1.5 hover:text-[#f15bb5] transition-colors">
                               <Heart className="w-3.5 h-3.5" /> 
                               <span className="text-[#00f5d4]">{post.likes_count}</span>
@@ -216,27 +216,27 @@ export default async function SquarePage({
           </div>
 
           {/* 右侧：分类导航 */}
-          <div className="w-full lg:w-72">
+          <div className="w-full lg:w-72 shrink-0">
             {/* 论坛板块 */}
-            <div className="p-5 bg-[#0a0a12] border border-[#1e1e2e]">
-              <h3 className="font-mono text-sm uppercase tracking-wider text-[#6b6b80] mb-4">
+            <div className="p-4 sm:p-5 bg-[#0a0a12] border border-[#1e1e2e]">
+              <h3 className="font-mono text-sm uppercase tracking-wider text-[#6b6b80] mb-3 sm:mb-4">
                 <span className="text-[#00f5d4]">//</span> 论坛板块
               </h3>
-              <div className="space-y-1">
+              <div className="grid grid-cols-2 sm:grid-cols-1 gap-1">
                 {categories.map((cat) => {
                   const isActive = currentCategory === cat.id;
                   return (
                     <a
                       key={cat.id}
                       href={`/square${cat.id === 'all' ? '' : `?category=${cat.id}`}${currentSort !== 'latest' ? `&sort=${currentSort}` : ''}`}
-                      className={`flex items-center gap-3 px-3 py-2.5 transition-all duration-300 ${
+                      className={`flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 transition-all duration-300 text-sm ${
                         isActive
                           ? 'bg-[#00f5d4]/10 border-l-2 border-[#00f5d4] text-[#00f5d4]'
                           : 'border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0]'
                       }`}
                     >
-                      <span className={`font-mono ${isActive ? 'text-[#00f5d4]' : ''}`}>{cat.icon}</span>
-                      <span className="text-sm">{cat.name}</span>
+                      <span className={`font-mono text-sm ${isActive ? 'text-[#00f5d4]' : ''}`}>{cat.icon}</span>
+                      <span className="truncate">{cat.name}</span>
                     </a>
                   );
                 })}
@@ -244,31 +244,31 @@ export default async function SquarePage({
             </div>
 
             {/* 快捷入口 */}
-            <div className="mt-4 p-5 bg-[#0a0a12] border border-[#1e1e2e]">
-              <h3 className="font-mono text-sm uppercase tracking-wider text-[#6b6b80] mb-4">
+            <div className="mt-4 p-4 sm:p-5 bg-[#0a0a12] border border-[#1e1e2e]">
+              <h3 className="font-mono text-sm uppercase tracking-wider text-[#6b6b80] mb-3 sm:mb-4">
                 <span className="text-[#9b5de5]">//</span> 快捷入口
               </h3>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 sm:grid-cols-1 gap-1">
                 <a 
                   href="/leaderboard"
-                  className="flex items-center gap-3 px-3 py-2.5 border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0] hover:border-[#9b5de5] transition-all duration-300"
+                  className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0] hover:border-[#9b5de5] transition-all duration-300 text-sm"
                 >
                   <span className="font-mono text-[#9b5de5]">◈</span>
-                  <span className="text-sm">积分排行榜</span>
+                  <span className="truncate">积分排行榜</span>
                 </a>
                 <a 
                   href="/groups"
-                  className="flex items-center gap-3 px-3 py-2.5 border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0] hover:border-[#f15bb5] transition-all duration-300"
+                  className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0] hover:border-[#f15bb5] transition-all duration-300 text-sm"
                 >
                   <span className="font-mono text-[#f15bb5]">◈</span>
-                  <span className="text-sm">我的小组</span>
+                  <span className="truncate">我的小组</span>
                 </a>
                 <a 
                   href="/docs"
-                  className="flex items-center gap-3 px-3 py-2.5 border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0] hover:border-[#00bbf9] transition-all duration-300"
+                  className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-2.5 border-l-2 border-transparent text-[#6b6b80] hover:bg-[#1e1e2e]/50 hover:text-[#e8e8f0] hover:border-[#00bbf9] transition-all duration-300 text-sm"
                 >
                   <span className="font-mono text-[#00bbf9]">◈</span>
-                  <span className="text-sm">API 文档</span>
+                  <span className="truncate">API 文档</span>
                 </a>
               </div>
             </div>
@@ -276,7 +276,7 @@ export default async function SquarePage({
             {/* 移动端发帖按钮 */}
             <a 
               href="/post/create"
-              className="flex md:hidden items-center justify-center mt-4 px-4 py-3 bg-[#00f5d4] text-[#05050a] font-mono text-sm uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] transition-all duration-300"
+              className="flex sm:hidden items-center justify-center mt-4 px-4 py-3 bg-[#00f5d4] text-[#05050a] font-mono text-sm uppercase tracking-wider hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] transition-all duration-300"
             >
               + 发布帖子
             </a>

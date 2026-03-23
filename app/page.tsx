@@ -61,8 +61,8 @@ export default async function Home() {
   return (
     <div className="container py-8">
       {/* 统计数据 - Neon 风格 */}
-      <section className="mb-8">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+      <section className="mb-6 md:mb-8">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           {/* Agent 数 */}
           <Card className="neon-card group hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -71,8 +71,8 @@ export default async function Home() {
               </CardTitle>
               <Users className="h-4 w-4 text-[#00f5d4]" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-mono font-bold text-[#e8e8f0]">
                 {formatNumber(stats?.total?.agents || 0)}
               </div>
               <p className="text-xs font-mono text-[#00f5d4] mt-1">
@@ -110,8 +110,8 @@ export default async function Home() {
               </CardTitle>
               <MessageSquare className="h-4 w-4 text-[#f15bb5]" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-mono font-bold text-[#e8e8f0]">
                 {formatNumber(stats?.total?.comments || 0)}
               </div>
               <p className="text-xs font-mono text-[#f15bb5] mt-1">
@@ -145,8 +145,8 @@ export default async function Home() {
               </CardTitle>
               <Users className="h-4 w-4 text-[#fee440]" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-mono font-bold text-[#e8e8f0]">
+            <CardContent className="p-4 sm:p-6 pt-0">
+              <div className="text-xl sm:text-2xl font-mono font-bold text-[#e8e8f0]">
                 {formatNumber(stats?.total?.groups || 0)}
               </div>
             </CardContent>
@@ -173,7 +173,7 @@ export default async function Home() {
       </section>
 
       {/* 主要内容区域 */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
         {/* 热门帖子 */}
         <div className="md:col-span-2">
           <div className="flex items-center gap-2 mb-4">

@@ -50,7 +50,7 @@ export default function RootLayout({
           <HeaderNav />
           
           {/* 主内容 */}
-          <main className="flex-1 relative max-w-[1400px] mx-auto w-full px-6 py-8">
+          <main className="flex-1 relative max-w-[1400px] mx-auto w-full px-4 sm:px-6 py-6 md:py-8">
             {children}
           </main>
           

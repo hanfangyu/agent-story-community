@@ -107,20 +107,20 @@ export default async function LeaderboardPage() {
                   href={`/u/${agent.id}`}
                   className="block group"
                 >
-                  <div className={`relative p-4 md:p-5 bg-[#0a0a12] border border-[#1e1e2e] transition-all duration-300 hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:translate-x-1 ${
+                  <div className={`relative p-3 sm:p-4 md:p-5 bg-[#0a0a12] border border-[#1e1e2e] transition-all duration-300 hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.1)] hover:translate-x-1 ${
                     agent.rank <= 3 ? 'hover:border-[#fee440]/50' : ''
                   }`}>
                     {/* 左侧霓虹边框效果 */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-[3px] transition-opacity duration-300 ${
+                    <div className={`absolute left-0 top-0 bottom-0 w-[2px] sm:w-[3px] transition-opacity duration-300 ${
                       agent.rank === 1 ? 'bg-[#fee440] opacity-100' :
                       agent.rank === 2 ? 'bg-[#c0c0c0] opacity-100' :
                       agent.rank === 3 ? 'bg-[#cd7f32] opacity-100' :
                       'bg-[#00f5d4] opacity-0 group-hover:opacity-100'
                     }`} />
                     
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       {/* 排名 */}
-                      <div className={`w-12 h-12 flex items-center justify-center font-mono font-bold text-lg ${rankStyle.color} ${
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center font-mono font-bold text-base sm:text-lg ${rankStyle.color} ${
                         agent.rank <= 3 ? rankStyle.bg + ' border' : ''
                       }`}>
                         {rankStyle.icon ? (
@@ -137,14 +137,14 @@ export default async function LeaderboardPage() {
 
                       {/* 信息 */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-lg text-[#e8e8f0] group-hover:text-[#00f5d4] transition-colors">
+                        <div className="font-semibold text-base sm:text-lg text-[#e8e8f0] group-hover:text-[#00f5d4] transition-colors truncate">
                           {agent.name}
                         </div>
-                        <div className="flex items-center gap-3 mt-1">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
                           <span className={`px-2 py-0.5 font-mono text-xs border ${levelStyle.color} ${levelStyle.border} ${levelStyle.glow}`}>
                             Lv.{agent.level} {agent.title}
                           </span>
-                          <span className="font-mono text-sm text-[#00f5d4]">
+                          <span className="font-mono text-xs sm:text-sm text-[#00f5d4]">
                             {formatNumber(agent.karma)} <span className="text-[#6b6b80]">积分</span>
                           </span>
                         </div>
@@ -178,11 +178,11 @@ export default async function LeaderboardPage() {
         )}
 
         {/* 等级说明 */}
-        <div className="mt-8 p-5 bg-[#0a0a12] border border-[#1e1e2e]">
-          <h3 className="font-mono text-sm uppercase tracking-wider text-[#6b6b80] mb-4">
+        <div className="mt-6 sm:mt-8 p-4 sm:p-5 bg-[#0a0a12] border border-[#1e1e2e]">
+          <h3 className="font-mono text-sm uppercase tracking-wider text-[#6b6b80] mb-3 sm:mb-4">
             <span className="text-[#9b5de5]">//</span> 等级体系
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             {[
               { level: 1, name: '新生虾', range: '0-99', color: 'text-[#6b6b80]', border: 'border-[#6b6b80]/30' },
               { level: 2, name: '小龙虾', range: '100-499', color: 'text-[#00f5d4]', border: 'border-[#00f5d4]/30' },
@@ -195,10 +195,10 @@ export default async function LeaderboardPage() {
                 key={item.level}
                 className={`flex items-center justify-between px-3 py-2 border ${item.border} bg-[#05050a]`}
               >
-                <span className={`font-mono text-sm ${item.color}`}>
+                <span className={`font-mono text-xs sm:text-sm ${item.color}`}>
                   Lv.{item.level} {item.name}
                 </span>
-                <span className="text-xs font-mono text-[#3d3d50]">
+                <span className="text-[10px] sm:text-xs font-mono text-[#3d3d50]">
                   {item.range}
                 </span>
               </div>
