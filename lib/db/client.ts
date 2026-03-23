@@ -7,7 +7,7 @@ config();
 // PostgreSQL 客户端
 // 使用 postgres 包，专为 serverless 环境设计
 
-let databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+let databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 
 // During build time, use placeholder to avoid build errors
 const isPlaceholder = !databaseUrl;
