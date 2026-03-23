@@ -9,8 +9,11 @@ config();
 
 let databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL or POSTGRES_URL is required');
+// During build time, use placeholder to avoid build errors
+const isPlaceholder = !databaseUrl;
+if (isPlaceholder) {
+  console.warn('[DB] DATABASE_URL not set, using placeholder for build');
+  databaseUrl = 'postgres://placeholder:placeholder@127.0.0.1:5432/placeholder';
 }
 
 // 自动转换 Neon 直接连接为连接池连接（解决连接数限制）
@@ -25,35 +28,77 @@ if (usePooler && databaseUrl.includes('.neon.tech') && !databaseUrl.includes('-p
   console.log('[DB] Using Neon pooler connection for better concurrency');
 }
 
-// 创建 SQL 客户端
+// 创建 SQL 客户端（延迟初始化，避免构建时连接）
 // postgres 包专为 serverless 环境设计，自动管理连接
 // Supabase/Neon 连接池配置：使用事务模式，每个查询独立
 const isDevelopment = process.env.NODE_ENV === 'development';
 const maxConnections = Number(process.env.DB_MAX_CONNECTIONS || (isDevelopment ? '5' : '2'));
 
-export const sql = postgres(databaseUrl, {
-  // 禁用 prepared statements（连接池事务模式需要）
-  prepare: false,
-  // 连接超时（秒）
-  connect_timeout: 15,
-  // 空闲超时（秒）
-  idle_timeout: 30,
-  // 允许适度并发，避免单连接阻塞把请求全部串行化
-  max: Number.isFinite(maxConnections) && maxConnections > 0 ? maxConnections : 2,
-  // SSL 配置
-  ssl: 'require',
-  // 连接错误处理
-  onnotice: (notice) => {
-    console.log('[DB Notice]', notice.message);
+// 延迟初始化的 SQL 客户端
+let _sql: ReturnType<typeof postgres> | null = null;
+
+export function getSql(): ReturnType<typeof postgres> {
+  // 如果使用占位符（构建时），返回 mock 对象
+  if (isPlaceholder) {
+    // 返回一个 mock SQL 对象，避免运行时错误
+    return {
+      query: async () => [],
+      begin: async () => mockTransaction(),
+      unsafe: async () => [],
+      template: {},
+      end: async () => {},
+    } as unknown as ReturnType<typeof postgres>;
+  }
+  
+  if (!_sql) {
+    _sql = postgres(databaseUrl!, {
+      // 禁用 prepared statements（连接池事务模式需要）
+      prepare: false,
+      // 连接超时（秒）
+      connect_timeout: 15,
+      // 空闲超时（秒）
+      idle_timeout: 30,
+      // 允许适度并发，避免单连接阻塞把请求全部串行化
+      max: Number.isFinite(maxConnections) && maxConnections > 0 ? maxConnections : 2,
+      // SSL 配置
+      ssl: 'require',
+      // 连接错误处理
+      onnotice: (notice: { message: string }) => {
+        console.log('[DB Notice]', notice.message);
+      },
+      // 连接状态变化
+      onclose: () => {
+        console.log('[DB] Connection closed');
+      },
+      // 调试模式
+      debug: process.env.NODE_ENV === 'development' ? (connection: unknown, query: string, params: unknown, types: unknown) => {
+        console.log('[DB] Query:', query.substring(0, 100));
+      } : false,
+    });
+  }
+  return _sql;
+}
+
+// Mock transaction for build time
+function mockTransaction() {
+  return {
+    commit: async () => {},
+    rollback: async () => {},
+    query: async () => [],
+    end: async () => {},
+  };
+}
+
+// 导出 sql 作为默认实例（兼容旧代码）
+export const sql = new Proxy({} as ReturnType<typeof postgres>, {
+  get(_, prop) {
+    const instance = getSql();
+    const value = (instance as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
   },
-  // 连接状态变化
-  onclose: () => {
-    console.log('[DB] Connection closed');
-  },
-  // 调试模式
-  debug: process.env.NODE_ENV === 'development' ? (connection, query, params, types) => {
-    console.log('[DB] Query:', query.substring(0, 100));
-  } : false,
 });
 
 // 健康检查函数
