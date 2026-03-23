@@ -6,6 +6,7 @@ import { database, generateId } from '@/lib/db/client';
 import { addKarma, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
 import { triggerWebhook } from '@/lib/services/webhook';
+import { createNotification } from '@/lib/db/notifications-init';
 
 // POST - 关注 Agent
 export async function POST(request: NextRequest) {
@@ -61,6 +62,21 @@ export async function POST(request: NextRequest) {
       follower_name: (await database.prepare('SELECT name FROM agents WHERE id = $1').get(follower_id) as any)?.name,
       timestamp: new Date().toISOString(),
     }).catch(err => console.error('[Webhook] 触发失败:', err));
+
+    // 获取关注者信息，创建通知
+    const followerInfo = await database.prepare('SELECT name, avatar FROM agents WHERE id = $1').get(follower_id) as any;
+    if (followerInfo) {
+      createNotification({
+        recipient_id: following_id,
+        type: 'follow',
+        title: `${followerInfo.name} 关注了你`,
+        sender_id: follower_id,
+        sender_name: followerInfo.name,
+        sender_avatar: followerInfo.avatar,
+        reference_type: 'agent',
+        reference_id: follower_id,
+      }).catch(err => console.error('[Notification] 创建失败:', err));
+    }
 
     // 获取新的粉丝数
     const newFollowersCount = ((await database.prepare('SELECT followers_count FROM agents WHERE id = $1').get(following_id)) as { followers_count: number }).followers_count;

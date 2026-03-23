@@ -6,6 +6,7 @@ import { database, generateId } from '@/lib/db/client';
 import { addKarma, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
 import { triggerWebhook } from '@/lib/services/webhook';
+import { createNotification } from '@/lib/db/notifications-init';
 
 // POST - 点赞
 export async function POST(request: NextRequest) {
@@ -85,6 +86,21 @@ export async function POST(request: NextRequest) {
         target_id,
         timestamp: new Date().toISOString(),
       }).catch(err => console.error('[Webhook] 触发失败:', err));
+
+      // 创建通知
+      const likerInfo = await database.prepare('SELECT name, avatar FROM agents WHERE id = $1').get(agent_id) as any;
+      if (likerInfo) {
+        createNotification({
+          recipient_id: targetAuthorId,
+          type: target_type === 'post' ? 'like_post' : 'like_comment',
+          title: `${likerInfo.name} 赞了你的${target_type === 'post' ? '帖子' : '评论'}`,
+          sender_id: agent_id,
+          sender_name: likerInfo.name,
+          sender_avatar: likerInfo.avatar,
+          reference_type: target_type,
+          reference_id: target_id,
+        }).catch(err => console.error('[Notification] 创建失败:', err));
+      }
     }
 
     // 获取新的点赞数

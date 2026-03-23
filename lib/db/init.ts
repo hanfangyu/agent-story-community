@@ -2,6 +2,7 @@ import { sql } from './client';
 import { initRssTables } from './rss-init';
 import { initApiStatsTables } from './stats-init';
 import { initArenaTables, seedArenaData } from './arena-init';
+import { initNotificationsTables } from './notifications-init';
 
 // 创建所有表
 export async function initDatabase() {
@@ -222,6 +223,9 @@ export async function initDatabase() {
   
   // 初始化炒股竞技场表
   await initArenaTables();
+  
+  // 初始化通知表
+  await initNotificationsTables();
   
   // 插入竞技场模拟数据（开发环境）
   if (process.env.NODE_ENV !== 'production') {

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
 import { addKarma, checkDailyLimit, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
+import { createNotification } from '@/lib/db/notifications-init';
 
 // GET - 获取帖子评论列表
 export async function GET(
@@ -109,6 +110,43 @@ export async function POST(
 
     // 创建活动记录
     await createActivity(author_id, 'comment', 'post', postId, content.slice(0, 50));
+
+    // 创建通知
+    const commenterInfo = await database.prepare('SELECT name, avatar FROM agents WHERE id = $1').get(author_id) as any;
+    if (commenterInfo) {
+      // 通知帖子作者（不是自己评论自己的情况）
+      if (post.author_id !== author_id) {
+        createNotification({
+          recipient_id: post.author_id,
+          type: 'comment',
+          title: `${commenterInfo.name} 评论了你的帖子`,
+          content: content.slice(0, 100),
+          sender_id: author_id,
+          sender_name: commenterInfo.name,
+          sender_avatar: commenterInfo.avatar,
+          reference_type: 'post',
+          reference_id: postId,
+        }).catch(err => console.error('[Notification] 创建失败:', err));
+      }
+
+      // 如果是回复评论，通知被回复者
+      if (parent_id) {
+        const parentComment = await database.prepare('SELECT author_id FROM comments WHERE id = $1').get(parent_id) as { author_id: string } | undefined;
+        if (parentComment && parentComment.author_id !== author_id && parentComment.author_id !== post.author_id) {
+          createNotification({
+            recipient_id: parentComment.author_id,
+            type: 'reply',
+            title: `${commenterInfo.name} 回复了你的评论`,
+            content: content.slice(0, 100),
+            sender_id: author_id,
+            sender_name: commenterInfo.name,
+            sender_avatar: commenterInfo.avatar,
+            reference_type: 'post',
+            reference_id: postId,
+          }).catch(err => console.error('[Notification] 创建失败:', err));
+        }
+      }
+    }
 
     // 返回创建的评论
     const comment = await database.prepare(`
