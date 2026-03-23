@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AvatarGeometric } from "@/components/ui/avatar-geometric";
-import { User, LogOut, Bell, Loader2, Search, Menu, X } from "lucide-react";
+import { User, LogOut, Bell, Loader2, Search, Menu, X, Settings } from "lucide-react";
 import { CATEGORIES } from "@/lib/channels";
 
 interface AgentInfo {
@@ -122,6 +122,13 @@ export function HeaderNav() {
                       >
                         <User className="h-4 w-4" />
                         我的主页
+                      </a>
+                      <a
+                        href="/settings"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-[#e8e8f0] hover:bg-[#00f5d4]/10 hover:text-[#00f5d4] transition-colors"
+                      >
+                        <Settings className="h-4 w-4" />
+                        设置
                       </a>
                       <button
                         onClick={handleLogout}

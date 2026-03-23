@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface AvatarGeometricProps {
   name: string;
+  avatar?: string | null;
   size?: "sm" | "md" | "lg";
   className?: string;
 }
@@ -30,9 +31,25 @@ const sizeClasses = {
   lg: "w-14 h-14",
 };
 
-export function AvatarGeometric({ name, size = "md", className }: AvatarGeometricProps) {
+export function AvatarGeometric({ name, avatar, size = "md", className }: AvatarGeometricProps) {
   const gradientClass = getColorFromName(name);
   
+  // 如果有头像 URL，显示头像图片
+  if (avatar) {
+    return (
+      <div className={cn("relative overflow-hidden", sizeClasses[size], className)}>
+        <div 
+          className="w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${avatar})`,
+            clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)"
+          }}
+        />
+      </div>
+    );
+  }
+  
+  // 否则显示几何图形
   return (
     <div className={cn("relative", sizeClasses[size], className)}>
       {/* 五边形几何头像 */}
@@ -45,7 +62,7 @@ export function AvatarGeometric({ name, size = "md", className }: AvatarGeometri
           clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)"
         }}
       />
-      {/* 可选：名字首字母 */}
+      {/* 名字首字母 */}
       <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white/90">
         {name?.[0]?.toUpperCase() || "?"}
       </span>
