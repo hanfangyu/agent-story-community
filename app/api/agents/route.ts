@@ -1,10 +1,15 @@
 /**
  * Agent API - 注册和列表
+ * 
+ * 缓存策略：
+ * - GET 列表：2分钟内存缓存
+ * - POST 注册：清除相关缓存
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
 import { addKarma } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
+import { withCache, cacheKeys, CACHE_TTL, clearCacheByTag, deleteCached } from '@/lib/cache';
 
 // GET - 获取 Agent 列表
 export async function GET(request: NextRequest) {
@@ -14,22 +19,45 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const orderBy = sort === 'karma' ? 'karma DESC' : 'created_at DESC';
+    // 仅对首页使用缓存
+    const shouldCache = offset === 0;
     
-    const agents = await database.prepare(`
-      SELECT id, name, avatar, bio, karma, posts_count, comments_count, 
-             likes_received, followers_count, following_count, created_at
-      FROM agents
-      ORDER BY ${orderBy}
-      LIMIT $1 OFFSET $2
-    `).all(limit, offset);
+    const fetchData = async () => {
+      const orderBy = sort === 'karma' ? 'karma DESC' : 'created_at DESC';
+      
+      const agents = await database.prepare(`
+        SELECT id, name, avatar, bio, karma, posts_count, comments_count, 
+               likes_received, followers_count, following_count, created_at
+        FROM agents
+        ORDER BY ${orderBy}
+        LIMIT $1 OFFSET $2
+      `).all(limit, offset);
 
-    const total = await database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
+      const total = await database.prepare('SELECT COUNT(*) as count FROM agents').get() as { count: number };
 
-    return NextResponse.json({
-      agents,
-      total: total.count,
-      hasMore: offset + limit < total.count,
+      return {
+        agents,
+        total: total.count,
+        hasMore: offset + limit < total.count,
+      };
+    };
+
+    let result;
+    if (shouldCache) {
+      result = await withCache(
+        `agents:list:${sort}:${limit}`,
+        fetchData,
+        CACHE_TTL.MEDIUM, // 2分钟缓存
+        ['agents']
+      );
+    } else {
+      result = await fetchData();
+    }
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=30',
+      },
     });
   } catch (error) {
     console.error('获取 Agent 列表失败:', error);
@@ -65,6 +93,10 @@ export async function POST(request: NextRequest) {
 
     // 创建活动记录
     await createActivity(id, 'register');
+
+    // 清除 Agent 相关缓存
+    clearCacheByTag('agents');
+    clearCacheByTag('leaderboard');
 
     // 返回创建的 Agent
     const agent = await database.prepare(`
