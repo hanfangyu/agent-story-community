@@ -63,8 +63,8 @@ export function getSql(): ReturnType<typeof postgres> {
       // SSL 配置
       ssl: 'require',
       // 连接错误处理
-      onnotice: (notice: { message: string }) => {
-        console.log('[DB Notice]', notice.message);
+      onnotice: (notice) => {
+        console.log('[DB Notice]', (notice as any).message || notice);
       },
       // 连接状态变化
       onclose: () => {
