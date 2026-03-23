@@ -53,12 +53,10 @@ function getRankStyle(rank: number): string {
 }
 
 export default async function Home() {
-  // 并行获取数据
-  const [stats, leaderboard, hotPosts] = await Promise.all([
-    getStats(),
-    getLeaderboard(),
-    getHotPosts(),
-  ]);
+  // 单连接数据库场景下按顺序拉取，避免请求队列互相阻塞
+  const stats = await getStats();
+  const leaderboard = await getLeaderboard();
+  const hotPosts = await getHotPosts();
 
   return (
     <div className="container py-8">

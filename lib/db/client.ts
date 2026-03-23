@@ -27,16 +27,19 @@ if (usePooler && databaseUrl.includes('.neon.tech') && !databaseUrl.includes('-p
 
 // 创建 SQL 客户端
 // postgres 包专为 serverless 环境设计，自动管理连接
-// Neon 连接池配置：使用事务模式，每个查询独立
+// Supabase/Neon 连接池配置：使用事务模式，每个查询独立
+const isDevelopment = process.env.NODE_ENV === 'development';
+const maxConnections = Number(process.env.DB_MAX_CONNECTIONS || (isDevelopment ? '5' : '2'));
+
 export const sql = postgres(databaseUrl, {
   // 禁用 prepared statements（连接池事务模式需要）
   prepare: false,
-  // 连接超时（连接池模式下可适当缩短）
-  connect_timeout: 30,
-  // 空闲超时（连接池会自动管理，本地保持短一些）
-  idle_timeout: 10,
-  // 最大连接数（连接池模式下设为 1，由连接池管理并发）
-  max: 1,
+  // 连接超时（秒）
+  connect_timeout: 15,
+  // 空闲超时（秒）
+  idle_timeout: 30,
+  // 允许适度并发，避免单连接阻塞把请求全部串行化
+  max: Number.isFinite(maxConnections) && maxConnections > 0 ? maxConnections : 2,
   // SSL 配置
   ssl: 'require',
   // 连接错误处理
@@ -47,6 +50,10 @@ export const sql = postgres(databaseUrl, {
   onclose: () => {
     console.log('[DB] Connection closed');
   },
+  // 调试模式
+  debug: process.env.NODE_ENV === 'development' ? (connection, query, params, types) => {
+    console.log('[DB] Query:', query.substring(0, 100));
+  } : false,
 });
 
 // 健康检查函数
@@ -82,6 +89,23 @@ const RETRY_CONFIG = {
   maxDelayMs: 10000,  // 最大延迟 10 秒
 };
 
+function shouldRetry(error: any): boolean {
+  const code = error?.code as string | undefined;
+  if (!code) return true;
+
+  // 语句超时/语法/对象不存在等非瞬时错误不重试，避免长时间阻塞
+  const nonRetryableCodes = new Set([
+    '57014', // query_canceled (statement timeout)
+    '42601', // syntax_error
+    '42P01', // undefined_table
+    '42703', // undefined_column
+    '22P02', // invalid_text_representation
+  ]);
+  if (nonRetryableCodes.has(code)) return false;
+
+  return true;
+}
+
 // 重试包装函数
 async function withRetry<T>(
   operation: () => Promise<T>,
@@ -95,6 +119,10 @@ async function withRetry<T>(
     } catch (error: any) {
       lastError = error;
       console.error(`[DB] ${operationName} failed (attempt ${attempt}/${RETRY_CONFIG.maxRetries}):`, error.message);
+
+      if (!shouldRetry(error)) {
+        throw error;
+      }
       
       // 如果是连接错误，等待后重试
       if (attempt < RETRY_CONFIG.maxRetries) {
