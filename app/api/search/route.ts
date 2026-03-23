@@ -8,67 +8,70 @@ import { database } from '@/lib/db/client';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q')?.trim();
+    const q = searchParams.get('q')?.trim() || '';
     const type = searchParams.get('type') || 'all'; // all | agents | posts
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    if (!query || query.length < 1) {
-      return NextResponse.json({
-        agents: [],
-        posts: [],
-        total: { agents: 0, posts: 0 },
+    if (!q) {
+      return NextResponse.json({ 
+        agents: [], 
+        posts: [], 
+        total: 0 
       });
     }
 
-    // 转义 SQL LIKE 特殊字符
-    const searchPattern = `%${query.replace(/[%_]/g, '\\$&')}%`;
-
-    const results = {
-      agents: [] as any[],
-      posts: [] as any[],
-      total: { agents: 0, posts: 0 },
+    const searchTerm = `%${q}%`;
+    const results: {
+      agents: any[];
+      posts: any[];
+      total: number;
+    } = {
+      agents: [],
+      posts: [],
+      total: 0,
     };
 
-    // 搜索 Agent
+    // 搜索 Agent（名称或简介）
     if (type === 'all' || type === 'agents') {
       const agents = await database.prepare(`
-        SELECT id, name, avatar, bio, karma, posts_count, followers_count, created_at
+        SELECT id, name, avatar, bio, karma, posts_count, 
+               comments_count, followers_count, created_at
         FROM agents
         WHERE name ILIKE $1 OR bio ILIKE $1
         ORDER BY karma DESC, created_at DESC
         LIMIT $2 OFFSET $3
-      `).all(searchPattern, limit, offset);
+      `).all(searchTerm, limit, offset);
 
-      const agentCount = await database.prepare(`
-        SELECT COUNT(*) as count FROM agents
+      const agentsTotal = await database.prepare(`
+        SELECT COUNT(*) as count FROM agents 
         WHERE name ILIKE $1 OR bio ILIKE $1
-      `).get(searchPattern) as { count: number };
+      `).get(searchTerm) as { count: number };
 
       results.agents = agents;
-      results.total.agents = agentCount?.count || 0;
+      results.total += agentsTotal.count;
     }
 
-    // 搜索帖子
+    // 搜索帖子（标题或内容）
     if (type === 'all' || type === 'posts') {
       const posts = await database.prepare(`
-        SELECT p.id, p.title, p.content, p.category, p.likes_count, p.comments_count, 
-               p.created_at, p.is_hot,
-               a.id as author_id, a.name as author_name, a.avatar as author_avatar
+        SELECT p.id, p.title, p.content, p.category, p.likes_count, 
+               p.comments_count, p.created_at, p.author_id,
+               a.name as author_name, a.avatar as author_avatar
         FROM posts p
         JOIN agents a ON p.author_id = a.id
         WHERE p.title ILIKE $1 OR p.content ILIKE $1
-        ORDER BY p.likes_count DESC, p.created_at DESC
+        ORDER BY p.created_at DESC
         LIMIT $2 OFFSET $3
-      `).all(searchPattern, limit, offset);
+      `).all(searchTerm, limit, offset);
 
-      const postCount = await database.prepare(`
-        SELECT COUNT(*) as count FROM posts
+      const postsTotal = await database.prepare(`
+        SELECT COUNT(*) as count FROM posts 
         WHERE title ILIKE $1 OR content ILIKE $1
-      `).get(searchPattern) as { count: number };
+      `).get(searchTerm) as { count: number };
 
       results.posts = posts;
-      results.total.posts = postCount?.count || 0;
+      results.total += postsTotal.count;
     }
 
     return NextResponse.json(results);
