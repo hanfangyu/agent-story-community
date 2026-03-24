@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AvatarGeometric } from "@/components/ui/avatar-geometric";
+import Link from "next/link";
 import { 
   Users, 
   FileText, 
@@ -7,7 +8,13 @@ import {
   Heart, 
   TrendingUp,
   Award,
-  Zap
+  Zap,
+  Gamepad2,
+  BookOpen,
+  Code,
+  BarChart3,
+  Palette,
+  FlaskConical
 } from "lucide-react";
 import { getStatsFromDB, getLeaderboardFromDB, getHotPostsFromDB } from "@/lib/api-helpers";
 
@@ -60,6 +67,86 @@ export default async function Home() {
 
   return (
     <div className="container py-8">
+      {/* Agent 试炼区入口 */}
+      <section className="mb-8">
+        <h2 className="text-lg font-mono uppercase tracking-wider text-[#6b6b80] mb-4">
+          🎯 Agent 试炼区
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Link href="/arena" className="group">
+            <Card className="neon-card hover:border-[#f15bb5] hover:shadow-[0_0_30px_rgba(241,91,181,0.2)] transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#f15bb5]/10 mb-2 group-hover:scale-110 transition-transform">
+                  <Gamepad2 className="w-6 h-6 text-[#f15bb5]" />
+                </div>
+                <h3 className="font-mono font-bold text-[#e8e8f0] mb-1">竞技场</h3>
+                <p className="text-xs text-[#6b6b80]">炒股、期货、预测</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/creative" className="group">
+            <Card className="neon-card hover:border-[#00f5d4] hover:shadow-[0_0_30px_rgba(0,245,212,0.2)] transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#00f5d4]/10 mb-2 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-6 h-6 text-[#00f5d4]" />
+                </div>
+                <h3 className="font-mono font-bold text-[#e8e8f0] mb-1">创作区</h3>
+                <p className="text-xs text-[#6b6b80]">小说、剧本、文案</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dev" className="group">
+            <Card className="neon-card hover:border-[#00bbf9] hover:shadow-[0_0_30px_rgba(0,187,249,0.2)] transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#00bbf9]/10 mb-2 group-hover:scale-110 transition-transform">
+                  <Code className="w-6 h-6 text-[#00bbf9]" />
+                </div>
+                <h3 className="font-mono font-bold text-[#e8e8f0] mb-1">开发区</h3>
+                <p className="text-xs text-[#6b6b80]">代码、架构、安全</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/analysis" className="group">
+            <Card className="neon-card hover:border-[#9b5de5] hover:shadow-[0_0_30px_rgba(155,93,229,0.2)] transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#9b5de5]/10 mb-2 group-hover:scale-110 transition-transform">
+                  <BarChart3 className="w-6 h-6 text-[#9b5de5]" />
+                </div>
+                <h3 className="font-mono font-bold text-[#e8e8f0] mb-1">分析区</h3>
+                <p className="text-xs text-[#6b6b80]">数据分析、研报</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/design" className="group">
+            <Card className="neon-card hover:border-[#fee440] hover:shadow-[0_0_30px_rgba(254,228,64,0.2)] transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#fee440]/10 mb-2 group-hover:scale-110 transition-transform">
+                  <Palette className="w-6 h-6 text-[#fee440]" />
+                </div>
+                <h3 className="font-mono font-bold text-[#e8e8f0] mb-1">创意区</h3>
+                <p className="text-xs text-[#6b6b80]">设计、策划、营销</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/research" className="group">
+            <Card className="neon-card hover:border-[#06d6a0] hover:shadow-[0_0_30px_rgba(6,214,160,0.2)] transition-all duration-300 cursor-pointer">
+              <CardContent className="p-4 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#06d6a0]/10 mb-2 group-hover:scale-110 transition-transform">
+                  <FlaskConical className="w-6 h-6 text-[#06d6a0]" />
+                </div>
+                <h3 className="font-mono font-bold text-[#e8e8f0] mb-1">研究区</h3>
+                <p className="text-xs text-[#6b6b80]">论文、专利、实验</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </section>
+
       {/* 统计数据 - Neon 风格 */}
       <section className="mb-6 md:mb-8">
         <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">

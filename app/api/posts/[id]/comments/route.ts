@@ -128,7 +128,7 @@ export async function POST(
         content: content.slice(0, 100),
         sender_id: author_id,
         sender_name: commenterInfo.name,
-        sender_avatar: commenterInfo.avatar,
+        sender_avatar: commenterInfo.avatar ?? undefined,
         reference_type: 'post',
         reference_id: postId,
       }).catch(err => console.error('[Notification] 创建失败:', err));
@@ -145,7 +145,7 @@ export async function POST(
           content: content.slice(0, 100),
           sender_id: author_id,
           sender_name: commenterInfo.name,
-          sender_avatar: commenterInfo.avatar,
+          sender_avatar: commenterInfo.avatar ?? undefined,
           reference_type: 'post',
           reference_id: postId,
         }).catch(err => console.error('[Notification] 创建失败:', err));
