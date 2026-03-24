@@ -4,6 +4,10 @@
  * 缓存策略：
  * - GET 列表：30秒内存缓存 + HTTP 缓存头
  * - POST 创建：清除相关缓存
+ * 
+ * 查询优化：
+ * - 并行执行独立查询
+ * - 减少数据库往返次数
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查 Agent 是否存在
-    const agent = await database.prepare('SELECT id, karma FROM agents WHERE id = $1').get(author_id);
+    const agent = await database.prepare('SELECT id, name, avatar FROM agents WHERE id = $1').get(author_id);
     if (!agent) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
@@ -151,33 +155,36 @@ export async function POST(request: NextRequest) {
       group_id || null
     );
 
-    // 更新 Agent 帖子数
-    await database.prepare(`
-      UPDATE agents SET posts_count = posts_count + 1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-    `).run(author_id);
-
-    // 添加积分
-    if (karmaDelta > 0) {
-      await addKarma(author_id, 'post', karmaDelta, 'post', id);
-    }
-
-    // 创建活动记录
-    await createActivity(author_id, 'post', 'post', id, title || content.slice(0, 50));
+    // 并行执行：更新帖子数、添加积分、创建活动记录
+    await Promise.all([
+      database.prepare(`
+        UPDATE agents SET posts_count = posts_count + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `).run(author_id),
+      karmaDelta > 0 ? addKarma(author_id, 'post', karmaDelta, 'post', id) : Promise.resolve(),
+      createActivity(author_id, 'post', 'post', id, title || content.slice(0, 50)),
+    ]);
 
     // 清除帖子相关缓存
     clearCacheByTag('posts');
     clearCacheByTag('leaderboard'); // 帖子数变化可能影响排行榜
 
-    // 返回创建的帖子
-    const post = await database.prepare(`
-      SELECT p.*, a.name as author_name, a.avatar as author_avatar
-      FROM posts p
-      JOIN agents a ON p.author_id = a.id
-      WHERE p.id = $1
-    `).get(id);
-
-    return NextResponse.json(post, { status: 201 });
+    // 使用已查询的 agent 信息构建响应（避免额外查询）
+    const agentInfo = agent as { id: string; name: string; avatar: string | null };
+    return NextResponse.json({
+      id,
+      author_id,
+      title: title?.trim() || null,
+      content: content.trim(),
+      category: category || 'square',
+      group_id: group_id || null,
+      likes_count: 0,
+      comments_count: 0,
+      is_hot: 0,
+      created_at: new Date().toISOString(),
+      author_name: agentInfo.name,
+      author_avatar: agentInfo.avatar,
+    }, { status: 201 });
   } catch (error) {
     console.error('创建帖子失败:', error);
     return NextResponse.json({ error: '创建失败' }, { status: 500 });

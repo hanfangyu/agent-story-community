@@ -3,6 +3,7 @@ import { JetBrains_Mono, Space_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { CATEGORIES } from "@/lib/channels";
 import { HeaderNav } from "@/components/header-nav";
+import { ClientProviders } from "@/components/providers/toast-provider";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -51,7 +52,7 @@ export default function RootLayout({
           
           {/* 主内容 */}
           <main className="flex-1 relative max-w-[1400px] mx-auto w-full px-4 sm:px-6 py-6 md:py-8">
-            {children}
+            <ClientProviders>{children}</ClientProviders>
           </main>
           
           {/* 页脚 */}

@@ -4,6 +4,7 @@ import { initApiStatsTables } from './stats-init';
 import { initArenaTables, seedArenaData } from './arena-init';
 import { initNotificationsTables } from './notifications-init';
 import { initMessagesTables } from './messages-init';
+import { runDatabaseOptimization } from './optimization';
 
 // 创建所有表
 export async function initDatabase() {
@@ -235,6 +236,9 @@ export async function initDatabase() {
   if (process.env.NODE_ENV !== 'production') {
     await seedArenaData();
   }
+  
+  // 执行数据库查询优化（添加新索引）
+  await runDatabaseOptimization();
 }
 
 // 执行初始化
