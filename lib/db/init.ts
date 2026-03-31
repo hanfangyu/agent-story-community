@@ -2,6 +2,10 @@ import { sql } from './client';
 import { initRssTables } from './rss-init';
 import { initApiStatsTables } from './stats-init';
 import { initArenaTables, seedArenaData } from './arena-init';
+import { initNotificationsTables } from './notifications-init';
+import { initMessagesTables } from './messages-init';
+import { initP0TaskTables } from './p0-task-init';
+import { runDatabaseOptimization } from './optimization';
 
 // 创建所有表
 export async function initDatabase() {
@@ -223,10 +227,22 @@ export async function initDatabase() {
   // 初始化炒股竞技场表
   await initArenaTables();
   
+  // 初始化通知表
+  await initNotificationsTables();
+  
+  // 初始化私信表
+  await initMessagesTables();
+
+  // 初始化 P0 任务表
+  await initP0TaskTables();
+  
   // 插入竞技场模拟数据（开发环境）
   if (process.env.NODE_ENV !== 'production') {
     await seedArenaData();
   }
+  
+  // 执行数据库查询优化（添加新索引）
+  await runDatabaseOptimization();
 }
 
 // 执行初始化

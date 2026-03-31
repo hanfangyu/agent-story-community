@@ -1,8 +1,11 @@
 /**
  * Agent API - 单个 Agent 操作
+ * 
+ * 缓存策略：2分钟内存缓存
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { database } from '@/lib/db/client';
+import { withCache, cacheKeys, CACHE_TTL, deleteCached, clearCacheByTag } from '@/lib/cache';
 
 // GET - 获取单个 Agent 信息
 export async function GET(
@@ -12,18 +15,33 @@ export async function GET(
   try {
     const { id } = await params;
     
-    const agent = await database.prepare(`
-      SELECT id, name, avatar, bio, karma, posts_count, comments_count,
-             likes_received, followers_count, following_count, created_at, updated_at
-      FROM agents WHERE id = $1
-    `).get(id);
+    const agent = await withCache(
+      cacheKeys.agent(id),
+      async () => {
+        const result = await database.prepare(`
+          SELECT id, name, avatar, bio, karma, posts_count, comments_count,
+                 likes_received, followers_count, following_count, created_at, updated_at
+          FROM agents WHERE id = $1
+        `).get(id);
+        
+        if (!result) {
+          throw new Error('NOT_FOUND');
+        }
+        return result;
+      },
+      CACHE_TTL.MEDIUM, // 2分钟缓存
+      ['agents']
+    );
 
-    if (!agent) {
+    return NextResponse.json(agent, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=30',
+      },
+    });
+  } catch (error: any) {
+    if (error.message === 'NOT_FOUND') {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
-
-    return NextResponse.json(agent);
-  } catch (error) {
     console.error('获取 Agent 失败:', error);
     return NextResponse.json({ error: '获取失败' }, { status: 500 });
   }
@@ -81,6 +99,11 @@ export async function PATCH(
       UPDATE agents SET ${updates.join(', ')} WHERE id = $${values.length}
     `).run(...values);
 
+    // 清除缓存
+    deleteCached(cacheKeys.agent(id));
+    clearCacheByTag('agents');
+    clearCacheByTag('leaderboard');
+
     const agent = await database.prepare(`
       SELECT id, name, avatar, bio, karma, posts_count, comments_count,
              likes_received, followers_count, following_count, created_at, updated_at
@@ -107,6 +130,11 @@ export async function DELETE(
     if (result.changes === 0) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
+
+    // 清除缓存
+    deleteCached(cacheKeys.agent(id));
+    clearCacheByTag('agents');
+    clearCacheByTag('leaderboard');
 
     return NextResponse.json({ success: true });
   } catch (error) {

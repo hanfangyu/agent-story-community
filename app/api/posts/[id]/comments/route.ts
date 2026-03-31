@@ -1,10 +1,15 @@
 /**
  * 评论 API
+ * 
+ * 查询优化：
+ * - 合并多次查询为单次查询
+ * - 减少数据库往返次数
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
 import { addKarma, checkDailyLimit, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
+import { createNotification } from '@/lib/db/notifications-init';
 
 // GET - 获取帖子评论列表
 export async function GET(
@@ -65,24 +70,29 @@ export async function POST(
       return NextResponse.json({ error: '内容不能为空' }, { status: 400 });
     }
 
-    // 检查帖子是否存在
-    const post = await database.prepare('SELECT id, author_id FROM posts WHERE id = $1').get(postId) as { id: string; author_id: string } | undefined;
+    // 优化：合并查询帖子、作者、父评论信息
+    const [postData, authorData, parentData] = await Promise.all([
+      database.prepare('SELECT id, author_id FROM posts WHERE id = $1').get(postId),
+      database.prepare('SELECT id, name, avatar FROM agents WHERE id = $1').get(author_id),
+      parent_id 
+        ? database.prepare('SELECT id, author_id FROM comments WHERE id = $1 AND post_id = $2').get(parent_id, postId)
+        : Promise.resolve(null),
+    ]);
+
+    // 验证帖子存在
+    const post = postData as { id: string; author_id: string } | undefined;
     if (!post) {
       return NextResponse.json({ error: '帖子不存在' }, { status: 404 });
     }
 
-    // 检查 Agent 是否存在
-    const agent = await database.prepare('SELECT id FROM agents WHERE id = $1').get(author_id);
-    if (!agent) {
+    // 验证 Agent 存在
+    if (!authorData) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
 
-    // 如果是回复评论，检查父评论是否存在
-    if (parent_id) {
-      const parent = await database.prepare('SELECT id FROM comments WHERE id = $1 AND post_id = $2').get(parent_id, postId);
-      if (!parent) {
-        return NextResponse.json({ error: '父评论不存在' }, { status: 404 });
-      }
+    // 如果是回复评论，验证父评论存在
+    if (parent_id && !parentData) {
+      return NextResponse.json({ error: '父评论不存在' }, { status: 404 });
     }
 
     // 检查每日评论积分上限
@@ -96,29 +106,64 @@ export async function POST(
       VALUES ($1, $2, $3, $4, $5)
     `).run(id, postId, author_id, parent_id || null, content.trim());
 
-    // 更新帖子评论数
-    await database.prepare('UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1').run(postId);
+    // 并行更新帖子评论数和 Agent 评论数
+    await Promise.all([
+      database.prepare('UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1').run(postId),
+      database.prepare('UPDATE agents SET comments_count = comments_count + 1 WHERE id = $1').run(author_id),
+    ]);
 
-    // 更新 Agent 评论数
-    await database.prepare('UPDATE agents SET comments_count = comments_count + 1 WHERE id = $1').run(author_id);
+    // 并行添加积分和创建活动记录
+    await Promise.all([
+      karmaDelta > 0 ? addKarma(author_id, 'comment', karmaDelta, 'comment', id) : Promise.resolve(),
+      createActivity(author_id, 'comment', 'post', postId, content.slice(0, 50)),
+    ]);
 
-    // 添加积分
-    if (karmaDelta > 0) {
-      await addKarma(author_id, 'comment', karmaDelta, 'comment', id);
+    // 创建通知（非阻塞）
+    const commenterInfo = authorData as { name: string; avatar: string | null };
+    if (post.author_id !== author_id) {
+      createNotification({
+        recipient_id: post.author_id,
+        type: 'comment',
+        title: `${commenterInfo.name} 评论了你的帖子`,
+        content: content.slice(0, 100),
+        sender_id: author_id,
+        sender_name: commenterInfo.name,
+        sender_avatar: commenterInfo.avatar ?? undefined,
+        reference_type: 'post',
+        reference_id: postId,
+      }).catch(err => console.error('[Notification] 创建失败:', err));
     }
 
-    // 创建活动记录
-    await createActivity(author_id, 'comment', 'post', postId, content.slice(0, 50));
+    // 如果是回复评论，通知被回复者
+    if (parent_id && parentData) {
+      const parentComment = parentData as { author_id: string };
+      if (parentComment.author_id !== author_id && parentComment.author_id !== post.author_id) {
+        createNotification({
+          recipient_id: parentComment.author_id,
+          type: 'reply',
+          title: `${commenterInfo.name} 回复了你的评论`,
+          content: content.slice(0, 100),
+          sender_id: author_id,
+          sender_name: commenterInfo.name,
+          sender_avatar: commenterInfo.avatar ?? undefined,
+          reference_type: 'post',
+          reference_id: postId,
+        }).catch(err => console.error('[Notification] 创建失败:', err));
+      }
+    }
 
-    // 返回创建的评论
-    const comment = await database.prepare(`
-      SELECT c.*, a.name as author_name, a.avatar as author_avatar
-      FROM comments c
-      JOIN agents a ON c.author_id = a.id
-      WHERE c.id = $1
-    `).get(id);
-
-    return NextResponse.json(comment, { status: 201 });
+    // 返回创建的评论（使用已查询的作者信息）
+    return NextResponse.json({
+      id,
+      post_id: postId,
+      author_id,
+      parent_id: parent_id || null,
+      content: content.trim(),
+      likes_count: 0,
+      created_at: new Date().toISOString(),
+      author_name: commenterInfo.name,
+      author_avatar: commenterInfo.avatar,
+    }, { status: 201 });
   } catch (error) {
     console.error('创建评论失败:', error);
     return NextResponse.json({ error: '创建失败' }, { status: 500 });

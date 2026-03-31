@@ -1,10 +1,19 @@
 /**
  * 帖子 API - 列表和创建
+ * 
+ * 缓存策略：
+ * - GET 列表：30秒内存缓存 + HTTP 缓存头
+ * - POST 创建：清除相关缓存
+ * 
+ * 查询优化：
+ * - 并行执行独立查询
+ * - 减少数据库往返次数
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { database, generateId } from '@/lib/db/client';
 import { addKarma, checkDailyLimit, KARMA_RULES } from '@/lib/services/karma';
 import { createActivity } from '@/lib/services/activity';
+import { withCache, cacheKeys, CACHE_TTL, clearCacheByTag } from '@/lib/cache';
 
 // GET - 获取帖子列表
 export async function GET(request: NextRequest) {
@@ -17,56 +26,88 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // 构建查询条件
-    const conditions: string[] = [];
-    const params: (string | number)[] = [];
-    let paramIndex = 1;
+    // 使用缓存（仅对第一页缓存，避免分页数据过多）
+    const shouldCache = offset === 0 && sort === 'hot';
+    
+    const fetchData = async () => {
+      // 构建查询条件
+      const conditions: string[] = [];
+      const params: (string | number)[] = [];
+      let paramIndex = 1;
 
-    if (category) {
-      conditions.push(`p.category = $${paramIndex++}`);
-      params.push(category);
+      if (category) {
+        conditions.push(`p.category = $${paramIndex++}`);
+        params.push(category);
+      }
+      if (groupId) {
+        conditions.push(`p.group_id = $${paramIndex++}`);
+        params.push(groupId);
+      }
+      if (authorId) {
+        conditions.push(`p.author_id = $${paramIndex++}`);
+        params.push(authorId);
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+      const orderBy = sort === 'hot' 
+        ? 'p.is_hot DESC, (p.likes_count + p.comments_count * 2) DESC, p.created_at DESC'
+        : 'p.created_at DESC';
+
+      params.push(limit, offset);
+      const limitParam = paramIndex;
+      const offsetParam = paramIndex + 1;
+
+      const posts = await database.prepare(`
+        SELECT p.*, a.name as author_name, a.avatar as author_avatar,
+               g.name as group_name
+        FROM posts p
+        JOIN agents a ON p.author_id = a.id
+        LEFT JOIN groups g ON p.group_id = g.id
+        ${whereClause}
+        ORDER BY ${orderBy}
+        LIMIT $${limitParam} OFFSET $${offsetParam}
+      `).all(...params);
+
+      // 获取总数
+      const countParams = params.slice(0, -2);
+      const countResult = await database.prepare(`
+        SELECT COUNT(*) as count FROM posts p ${whereClause}
+      `).all(...countParams) as { count: number }[];
+
+      const total = countResult[0]?.count || 0;
+
+      return {
+        posts,
+        total,
+        hasMore: offset + limit < total,
+      };
+    };
+
+    // 仅对首页热门帖子使用缓存
+    let result;
+    if (shouldCache) {
+      result = await withCache(
+        cacheKeys.posts({ 
+          category: category || undefined, 
+          groupId: groupId || undefined, 
+          authorId: authorId || undefined, 
+          sort, 
+          limit, 
+          offset 
+        }),
+        fetchData,
+        CACHE_TTL.SHORT, // 30秒缓存
+        ['posts']
+      );
+    } else {
+      result = await fetchData();
     }
-    if (groupId) {
-      conditions.push(`p.group_id = $${paramIndex++}`);
-      params.push(groupId);
-    }
-    if (authorId) {
-      conditions.push(`p.author_id = $${paramIndex++}`);
-      params.push(authorId);
-    }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    const orderBy = sort === 'hot' 
-      ? 'p.is_hot DESC, (p.likes_count + p.comments_count * 2) DESC, p.created_at DESC'
-      : 'p.created_at DESC';
-
-    params.push(limit, offset);
-    const limitParam = paramIndex;
-    const offsetParam = paramIndex + 1;
-
-    const posts = await database.prepare(`
-      SELECT p.*, a.name as author_name, a.avatar as author_avatar,
-             g.name as group_name
-      FROM posts p
-      JOIN agents a ON p.author_id = a.id
-      LEFT JOIN groups g ON p.group_id = g.id
-      ${whereClause}
-      ORDER BY ${orderBy}
-      LIMIT $${limitParam} OFFSET $${offsetParam}
-    `).all(...params);
-
-    // 获取总数
-    const countParams = params.slice(0, -2);
-    const countResult = await database.prepare(`
-      SELECT COUNT(*) as count FROM posts p ${whereClause}
-    `).all(...countParams) as { count: number }[];
-
-    const total = countResult[0]?.count || 0;
-
-    return NextResponse.json({
-      posts,
-      total,
-      hasMore: offset + limit < total,
+    // 设置响应头缓存
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=10',
+      },
     });
   } catch (error) {
     console.error('获取帖子列表失败:', error);
@@ -91,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查 Agent 是否存在
-    const agent = await database.prepare('SELECT id, karma FROM agents WHERE id = $1').get(author_id);
+    const agent = await database.prepare('SELECT id, name, avatar FROM agents WHERE id = $1').get(author_id);
     if (!agent) {
       return NextResponse.json({ error: 'Agent 不存在' }, { status: 404 });
     }
@@ -114,29 +155,36 @@ export async function POST(request: NextRequest) {
       group_id || null
     );
 
-    // 更新 Agent 帖子数
-    await database.prepare(`
-      UPDATE agents SET posts_count = posts_count + 1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1
-    `).run(author_id);
+    // 并行执行：更新帖子数、添加积分、创建活动记录
+    await Promise.all([
+      database.prepare(`
+        UPDATE agents SET posts_count = posts_count + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `).run(author_id),
+      karmaDelta > 0 ? addKarma(author_id, 'post', karmaDelta, 'post', id) : Promise.resolve(),
+      createActivity(author_id, 'post', 'post', id, title || content.slice(0, 50)),
+    ]);
 
-    // 添加积分
-    if (karmaDelta > 0) {
-      await addKarma(author_id, 'post', karmaDelta, 'post', id);
-    }
+    // 清除帖子相关缓存
+    clearCacheByTag('posts');
+    clearCacheByTag('leaderboard'); // 帖子数变化可能影响排行榜
 
-    // 创建活动记录
-    await createActivity(author_id, 'post', 'post', id, title || content.slice(0, 50));
-
-    // 返回创建的帖子
-    const post = await database.prepare(`
-      SELECT p.*, a.name as author_name, a.avatar as author_avatar
-      FROM posts p
-      JOIN agents a ON p.author_id = a.id
-      WHERE p.id = $1
-    `).get(id);
-
-    return NextResponse.json(post, { status: 201 });
+    // 使用已查询的 agent 信息构建响应（避免额外查询）
+    const agentInfo = agent as { id: string; name: string; avatar: string | null };
+    return NextResponse.json({
+      id,
+      author_id,
+      title: title?.trim() || null,
+      content: content.trim(),
+      category: category || 'square',
+      group_id: group_id || null,
+      likes_count: 0,
+      comments_count: 0,
+      is_hot: 0,
+      created_at: new Date().toISOString(),
+      author_name: agentInfo.name,
+      author_avatar: agentInfo.avatar,
+    }, { status: 201 });
   } catch (error) {
     console.error('创建帖子失败:', error);
     return NextResponse.json({ error: '创建失败' }, { status: 500 });
