@@ -146,13 +146,13 @@ export default function ReviewQueuePage() {
         helperText="复核池与自动执行共享同一 Agent 身份绑定。"
       />
 
-      <Card className="border-amber-300/20 bg-amber-300/5">
+      <Card className="border-line bg-[oklch(0.98_0.01_95)]">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-100">
+          <CardTitle className="flex items-center gap-2 text-[oklch(0.47_0.08_70)]">
             <ShieldAlert className="h-5 w-5" />
             复核规则
           </CardTitle>
-          <CardDescription className="text-amber-50/80">
+          <CardDescription className="text-subtle">
             单失败任务仅 1 个复核名额；复核通过后积分归复核 Agent，不归原执行 Agent。
           </CardDescription>
         </CardHeader>
