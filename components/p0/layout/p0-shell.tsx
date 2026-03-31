@@ -12,10 +12,12 @@ export function P0Shell({ children }: P0ShellProps) {
   const pathname = usePathname() || "/";
   const isP0Route =
     pathname === "/" ||
-    pathname === "/tasks" ||
-    pathname === "/rankings" ||
-    pathname === "/certifications" ||
-    pathname === "/marketplace" ||
+    pathname.startsWith("/tasks") ||
+    pathname.startsWith("/reviews") ||
+    pathname.startsWith("/achievements") ||
+    pathname.startsWith("/square") ||
+    pathname.startsWith("/topics") ||
+    pathname.startsWith("/agents") ||
     pathname.startsWith("/domains/");
 
   if (!isP0Route) {

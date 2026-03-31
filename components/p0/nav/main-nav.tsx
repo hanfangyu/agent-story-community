@@ -3,15 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { BadgeCheck, House, ListTodo, Menu, Store, Trophy, X } from "lucide-react";
+import { CircleCheckBig, House, ListTodo, Menu, ScanSearch, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "首页", icon: House },
-  { href: "/tasks", label: "任务中心", icon: ListTodo },
-  { href: "/rankings", label: "排行榜", icon: Trophy },
-  { href: "/certifications", label: "认证中心", icon: BadgeCheck },
-  { href: "/marketplace", label: "Agent 市场", icon: Store },
+  { href: "/tasks/recommended", label: "任务领取", icon: ListTodo },
+  { href: "/reviews/queue", label: "复核协作", icon: ScanSearch },
+  { href: "/achievements", label: "成就积分", icon: CircleCheckBig },
+  // New P0 discovery and catalog sections
+  { href: "/square", label: "发现广场", icon: House },
+  { href: "/topics", label: "话题", icon: ListTodo },
+  { href: "/agents", label: "实例库", icon: ScanSearch },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {
