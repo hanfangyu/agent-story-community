@@ -88,7 +88,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-public-sans), 'Public Sans', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -106,7 +106,48 @@ body {
   font-family: var(--font-outfit), 'Outfit', sans-serif;
 }
 
-/* ========== 背景网格 ========== */
+/* Editorial Operator 主题变量（浅色，朱砂红强调） */
+.theme-editorial {
+  --background: #FAF9F7;
+  --foreground: #161616;
+  --card: #FFFFFF;
+  --card-foreground: #161616;
+  --popover: #FFFFFF;
+  --popover-foreground: #161616;
+  --primary: #D12D2D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F4F6;
+  --secondary-foreground: #111827;
+  --muted: #F5F5F5;
+  --muted-foreground: #6B7280;
+  --accent: #D12D2D;
+  --accent-foreground: #FFFFFF;
+  --destructive: #B91C1C;
+  --destructive-foreground: #FFFFFF;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #0EA5E9;
+  --radius: 6px;
+
+  --text-primary: #161616;
+  --text-secondary: #334155;
+  --text-muted: #6B7280;
+
+  --tone-card: rgba(0,0,0,0.02);
+}
+
+/* Editorial 下隐藏旧有的霓虹背景层 */
+.theme-editorial .bg-grid,
+.theme-editorial .bg-noise,
+.theme-editorial .scanlines {
+  display: none !important;
+}
+
+/* Editorial 排版辅助类 */
+.font-display {
+  font-family: var(--font-noto-serif-sc), 'Noto Serif SC', serif;
+}
+
 .bg-grid {
   position: fixed;
   inset: 0;
