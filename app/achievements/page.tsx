@@ -47,35 +47,35 @@ export default function AchievementsPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border/80 bg-card/80">
+        <Card className="border-line bg-surface">
           <CardHeader>
-            <CardDescription>总积分</CardDescription>
-            <CardTitle className="text-3xl">{stats.totalPoints}</CardTitle>
+            <CardDescription className="text-subtle">总积分</CardDescription>
+            <CardTitle className="text-3xl text-ink tabular-nums">{stats.totalPoints}</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">通过任务与复核通过后结算</CardContent>
+          <CardContent className="text-xs text-subtle">通过任务与复核通过后结算</CardContent>
         </Card>
-        <Card className="border-border/80 bg-card/80">
+        <Card className="border-line bg-surface">
           <CardHeader>
-            <CardDescription>近 7 天通过率（模拟）</CardDescription>
-            <CardTitle className="text-3xl">{toPercent(passRate)}%</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Progress value={toPercent(passRate)} />
-          </CardContent>
-        </Card>
-        <Card className="border-border/80 bg-card/80">
-          <CardHeader>
-            <CardDescription>失败转复核通过率</CardDescription>
-            <CardTitle className="text-3xl">{toPercent(reviewConversion)}%</CardTitle>
+            <CardDescription className="text-subtle">近 7 天通过率（模拟）</CardDescription>
+            <CardTitle className="text-3xl text-ink tabular-nums">{toPercent(passRate)}%</CardTitle>
           </CardHeader>
           <CardContent>
-            <Progress value={toPercent(reviewConversion)} className="bg-amber-200/20 [&>div]:bg-amber-300" />
+            <Progress value={toPercent(passRate)} className="bg-[oklch(0.92_0.01_95)] [&>div]:bg-[oklch(0.6_0.13_20)]" />
           </CardContent>
         </Card>
-        <Card className="border-border/80 bg-card/80">
+        <Card className="border-line bg-surface">
           <CardHeader>
-            <CardDescription>当前主领域</CardDescription>
-            <CardTitle className="text-xl">{domainMeta.label}</CardTitle>
+            <CardDescription className="text-subtle">失败转复核通过率</CardDescription>
+            <CardTitle className="text-3xl text-ink tabular-nums">{toPercent(reviewConversion)}%</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Progress value={toPercent(reviewConversion)} className="bg-[oklch(0.92_0.01_95)] [&>div]:bg-[oklch(0.6_0.13_160)]" />
+          </CardContent>
+        </Card>
+        <Card className="border-line bg-surface">
+          <CardHeader>
+            <CardDescription className="text-subtle">当前主领域</CardDescription>
+            <CardTitle className="text-xl text-ink">{domainMeta.label}</CardTitle>
           </CardHeader>
           <CardContent>
             <Badge variant="outline" className={domainMeta.accentClass}>
@@ -86,30 +86,30 @@ export default function AchievementsPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border-border/80 bg-card/80">
+        <Card className="border-line bg-surface">
           <CardHeader>
-            <CardTitle>执行与复核统计</CardTitle>
-            <CardDescription>自动执行任务与复核任务的分项记录。</CardDescription>
+            <CardTitle className="text-ink">执行与复核统计</CardTitle>
+            <CardDescription className="text-subtle">自动执行任务与复核任务的分项记录。</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                <ShieldCheck className="h-4 w-4 text-primary" />
+            <div className="rounded-md border border-line bg-bg p-4">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
+                <ShieldCheck className="h-4 w-4 text-[oklch(0.55_0.18_25)]" />
                 自动执行
               </div>
-              <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="space-y-1 text-sm text-subtle">
                 <div>通过: {stats.autoPassed}</div>
                 <div>失败: {stats.autoFailed}</div>
                 <div>总评测: {autoTotal}</div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                <TrendingUp className="h-4 w-4 text-primary" />
+            <div className="rounded-md border border-line bg-bg p-4">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium text-ink">
+                <TrendingUp className="h-4 w-4 text-[oklch(0.55_0.18_25)]" />
                 复核协作
               </div>
-              <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="space-y-1 text-sm text-subtle">
                 <div>复核通过: {stats.reviewPassed}</div>
                 <div>复核失败: {stats.reviewFailed}</div>
                 <div>复核总量: {reviewTotal}</div>
@@ -118,10 +118,10 @@ export default function AchievementsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 bg-card/80">
+        <Card className="border-line bg-surface">
           <CardHeader>
-            <CardTitle>领域徽章</CardTitle>
-            <CardDescription>根据当前积分和协作表现逐级解锁。</CardDescription>
+            <CardTitle className="text-ink">领域徽章</CardTitle>
+            <CardDescription className="text-subtle">根据当前积分和协作表现逐级解锁。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {[
@@ -133,10 +133,10 @@ export default function AchievementsPage() {
               return (
                 <div
                   key={item.name}
-                  className="flex items-center justify-between rounded-2xl border border-border/70 bg-background/60 px-4 py-3"
+                  className="flex items-center justify-between rounded-md border border-line bg-bg px-4 py-3"
                 >
-                  <span className="flex items-center gap-2 text-sm text-foreground">
-                    <Icon className="h-4 w-4 text-primary" />
+                  <span className="flex items-center gap-2 text-sm text-ink">
+                    <Icon className="h-4 w-4 text-[oklch(0.55_0.18_25)]" />
                     {item.name}
                   </span>
                   <Badge variant={item.unlocked ? "default" : "outline"}>
@@ -149,35 +149,35 @@ export default function AchievementsPage() {
         </Card>
       </section>
 
-      <Card className="border-border/80 bg-card/80">
+      <Card className="border-line bg-surface">
         <CardHeader>
-          <CardTitle>下一步建议</CardTitle>
-          <CardDescription>提升成就速度的优先动作。</CardDescription>
+          <CardTitle className="text-ink">下一步建议</CardTitle>
+          <CardDescription className="text-subtle">提升成就速度的优先动作。</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Link
             href="/tasks/recommended"
-            className="rounded-2xl border border-border/80 bg-background/60 p-4 text-sm transition-colors hover:border-primary/35 hover:bg-primary/5"
+            className="rounded-md border border-line bg-bg p-4 text-sm transition-colors hover:border-ink/25"
           >
-            <div className="font-medium text-foreground">继续领取推荐任务</div>
-            <div className="mt-1 text-xs leading-5 text-muted-foreground">优先完成高匹配高积分任务</div>
+            <div className="font-medium text-ink">继续领取推荐任务</div>
+            <div className="mt-1 text-xs leading-5 text-subtle">优先完成高匹配高积分任务</div>
           </Link>
           <Link
             href="/reviews/queue"
-            className="rounded-2xl border border-border/80 bg-background/60 p-4 text-sm transition-colors hover:border-primary/35 hover:bg-primary/5"
+            className="rounded-md border border-line bg-bg p-4 text-sm transition-colors hover:border-ink/25"
           >
-            <div className="font-medium text-foreground">抢单复核</div>
-            <div className="mt-1 text-xs leading-5 text-muted-foreground">复核通过积分全部归你</div>
+            <div className="font-medium text-ink">抢单复核</div>
+            <div className="mt-1 text-xs leading-5 text-subtle">复核通过积分全部归你</div>
           </Link>
           <Link
             href="/domains/engineering-delivery"
-            className="flex items-center justify-between rounded-2xl border border-border/80 bg-background/60 p-4 text-sm transition-colors hover:border-primary/35 hover:bg-primary/5"
+            className="flex items-center justify-between rounded-md border border-line bg-bg p-4 text-sm transition-colors hover:border-ink/25"
           >
             <span>
-              <span className="block font-medium text-foreground">查看领域任务</span>
-              <span className="mt-1 block text-xs leading-5 text-muted-foreground">按职业领域优化执行策略</span>
+              <span className="block font-medium text-ink">查看领域任务</span>
+              <span className="mt-1 block text-xs leading-5 text-subtle">按职业领域优化执行策略</span>
             </span>
-            <ArrowRight className="h-4 w-4 text-primary" />
+            <ArrowRight className="h-4 w-4 text-[oklch(0.55_0.18_25)]" />
           </Link>
         </CardContent>
       </Card>
