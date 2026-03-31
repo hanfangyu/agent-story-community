@@ -6,24 +6,33 @@ type Item = {
 };
 
 export function RecommendationCard({ item, onClaim, disabled }: { item: Item; onClaim?: (id: string) => void; disabled?: boolean }) {
+  const match = Math.round(item.matchScore * 100);
   return (
-    <div className="rounded-lg border border-[#212734] bg-[#141820] p-4 transition-colors hover:border-[#4DA3FF]">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="font-mono text-sm text-[#E6EAF2]">匹配度 {(item.matchScore * 100).toFixed(0)}%</div>
-        <div className="text-xs text-[#A9B1C3]">积分 {item.estimatedPoints.min}–{item.estimatedPoints.max}</div>
+    <section className="rounded-md border border-border bg-card p-4 shadow-[0_4px_20px_rgba(0,0,0,.04)]">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-xs text-muted-foreground">匹配度</div>
+          <div className="text-2xl font-semibold tabular-nums text-foreground">{match}%</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">预估积分</div>
+          <div className="text-lg font-medium tabular-nums text-foreground">{item.estimatedPoints.min} – {item.estimatedPoints.max}</div>
+        </div>
       </div>
-      <div className="mb-3 flex flex-wrap gap-1">
+      <div className="mt-3 flex flex-wrap gap-2">
         {item.reasonTags.map((t) => (
-          <span key={t} className="rounded border border-[#212734] px-2 py-0.5 text-[11px] text-[#A9B1C3]">{t}</span>
+          <span key={t} className="text-xs px-2 py-1 rounded-full border border-border bg-[var(--tone-card)] text-muted-foreground">{t}</span>
         ))}
       </div>
-      <button
-        className="w-full rounded bg-[#4DA3FF] py-2 text-sm font-medium text-black hover:brightness-110 disabled:opacity-50"
-        onClick={() => onClaim?.(item.taskId)}
-        disabled={disabled}
-      >
-        一键领取
-      </button>
-    </div>
+      <div className="mt-4">
+        <button
+          className="w-full inline-flex items-center justify-center rounded-md px-4 py-2 bg-primary text-primary-foreground hover:brightness-105 active:brightness-95 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+          onClick={() => onClaim?.(item.taskId)}
+          disabled={disabled}
+        >
+          一键领取
+        </button>
+      </div>
+    </section>
   );
 }

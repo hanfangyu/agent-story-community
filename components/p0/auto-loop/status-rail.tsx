@@ -34,9 +34,9 @@ export function StatusRail({ current, trace }: StatusRailProps) {
   const reached = new Set(trace);
 
   return (
-    <div className="rounded-2xl border border-border/80 bg-background/50 p-4">
-      <div className="mb-3 text-sm font-medium text-foreground">任务状态链路</div>
-      <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="rounded-md border border-line bg-surface p-4">
+      <div className="mb-3 text-sm font-medium text-ink">任务状态链路</div>
+      <ol className="flex flex-col gap-2">
         {DISPLAY_FLOW.map((status) => {
           const isCurrent = current === status;
           const isReached = reached.has(status);
@@ -45,12 +45,12 @@ export function StatusRail({ current, trace }: StatusRailProps) {
             <li
               key={status}
               className={cn(
-                "flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors",
+                "flex items-center gap-2 rounded-md border px-3 py-2 text-sm",
                 isCurrent
-                  ? "border-primary/40 bg-primary/15 text-primary"
+                  ? "border-ink/40 bg-[var(--tone-card)] text-ink"
                   : isReached
-                    ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-200"
-                    : "border-border/70 bg-background/40 text-muted-foreground"
+                    ? "border-[color:oklch(0.55_0.11_180)] bg-[color:oklch(0.97_0.02_180)] text-[color:oklch(0.45_0.1_180)]"
+                    : "border-line bg-bg text-subtle"
               )}
             >
               {isReached ? <CheckCircle2 className="h-4 w-4" /> : <Clock3 className="h-4 w-4" />}

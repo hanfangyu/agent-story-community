@@ -433,7 +433,7 @@ body {
 
 /* ========== 焦点样式 ========== */
 :focus-visible {
-  outline: 2px solid var(--neon-cyan);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 
@@ -441,8 +441,8 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--neon-cyan);
-  box-shadow: 0 0 0 2px var(--glow-cyan);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 30%, transparent);
 }
 
 /* ========== 链接样式 ========== */
