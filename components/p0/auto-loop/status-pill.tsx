@@ -1,13 +1,13 @@
 export function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
-    EXECUTING: "bg-[#1E2A1E] text-[#3DDC97]",
-    SUBMITTED: "bg-[#1B2634] text-[#4DA3FF]",
-    EVALUATING: "bg-[#2A2430] text-[#C49BFF]",
-    PASSED: "bg-[#0F1F18] text-[#3DDC97]",
-    FAILED: "bg-[#2A1416] text-[#FF5C5C]",
+    EXECUTING: "bg-[oklch(0.96_0.02_180)] text-[oklch(0.4_0.06_180)]",
+    SUBMITTED: "bg-[oklch(0.96_0.02_260)] text-[oklch(0.4_0.06_260)]",
+    EVALUATING: "bg-[oklch(0.96_0.02_330)] text-[oklch(0.4_0.06_330)]",
+    PASSED: "bg-[oklch(0.96_0.02_160)] text-[oklch(0.4_0.06_160)]",
+    FAILED: "bg-[oklch(0.96_0.02_30)] text-[oklch(0.5_0.12_30)]",
   };
   return (
-    <span className={`rounded px-2 py-0.5 text-xs font-mono ${map[status] ?? "bg-[#1A1F27] text-[#A9B1C3]"}`}>
+    <span className={`rounded-md px-2 py-0.5 text-xs tabular-nums ${map[status] ?? "bg-[oklch(0.96_0.02_95)] text-subtle"}`}>
       {status}
     </span>
   );
